@@ -1,0 +1,8 @@
+Target dependency graph (4 targets)
+Target 'AllExcludingTests' in project 'Aggregate'
+➜ Explicit dependency on target 'AsyncNetworkSessionDemo-product' in project 'AsyncNetworkSessionDemo'
+Target 'AsyncNetworkSessionDemo-product' in project 'AsyncNetworkSessionDemo'
+➜ Explicit dependency on target 'AsyncNetworkSession-product' in project 'AsyncNetworkSession'
+Target 'AsyncNetworkSession-product' in project 'AsyncNetworkSession'
+➜ Explicit dependency on target 'AsyncNetworkSession' in project 'AsyncNetworkSession'
+Target 'AsyncNetworkSession' in project 'AsyncNetworkSession' (no dependencies)
