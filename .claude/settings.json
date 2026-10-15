@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(swift build)",
+      "Bash(swift test)",
+      "Bash(swiftlint)",
+      "Bash(xcodebuild -scheme * -destination 'platform=iOS Simulator,*' build)",
+      "Bash(cat *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Read",
+      "Write"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push *)",
+      "Bash(git rebase *)",
+      "Bash(pod install)"
+    ]
+  }
+}
