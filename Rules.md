@@ -6,6 +6,7 @@
 - **Library Architecture (`Sources/` only):** Use a service-layer architecture with one main `Services` object that retains services as they are created.
 - **Demo App Architecture (`DemoApp/` only):** Use the MVVM-C pattern. Keep SwiftUI views focused on presentation, place presentation state and logic in view models, and use coordinators for navigation and flow orchestration.
 - **Demo App Folder Organization (`DemoApp/` only):** Place views in `Views/`, view models in `ViewModels/`, models in `Models/`, and service implementations in `Services/`. Each type belongs in the folder that matches its responsibility.
+- **Demo App View Models (`DemoApp/ViewModels/` only):** Define injected collaborators in a nested `Dependency` struct and accept that struct in the view model's initializer. Expose nested `Input` and `Output` model types: views and other view models invoke `Input` functions, which forward events through a `PassthroughSubject`; the view model subscribes to those inputs. `Output` exposes publishers that emit results for views and other view models to observe.
 - **Library Folder Organization (`Sources/` only):** Place service implementations in `Services/`. Place the `Services` container and `ServicesFactory` in `ServiceFactory/`.
 - **Dependency Manager:** Swift Package Manager (SPM) only. Avoid adding third-party libraries without explicit discussion.
 
