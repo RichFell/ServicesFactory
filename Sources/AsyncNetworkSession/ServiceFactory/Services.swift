@@ -8,22 +8,29 @@ public actor Services: ServicesFactory {
     /// Creates an empty service registry.
     public init() {}
 
-    /// Registers `service` as the implementation for `serviceType`.
+    /// Returns the registered implementation for `serviceType`.
+    public func service<ServiceImplementation: Service>(
+        for serviceType: ServiceType
+    ) async -> ServiceImplementation {
+        if let service = registeredServices[serviceType] as? ServiceImplementation {
+            return service
+        }
+        var newService: ServiceImplementation?
+        switch serviceType {
+        case .list:
+            newService = ListServiceImplementation() as? ServiceImplementation
+        }
+        guard let newService else {
+            preconditionFailure("Failed to create a service")
+        }
+        registeredServices[serviceType] = newService
+        return newService
+    }
+    
     public func register<ServiceImplementation: Service>(
         _ service: ServiceImplementation,
         for serviceType: ServiceType
     ) {
         registeredServices[serviceType] = service
-    }
-
-    /// Returns the registered implementation for `serviceType`.
-    public func service<ServiceImplementation: Service>(
-        for serviceType: ServiceType
-    ) async -> ServiceImplementation {
-        guard let service = registeredServices[serviceType] as? ServiceImplementation else {
-            preconditionFailure("No matching service is registered for \\(serviceType).")
-        }
-
-        return service
     }
 }

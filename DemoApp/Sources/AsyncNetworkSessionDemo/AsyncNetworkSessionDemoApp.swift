@@ -5,7 +5,7 @@ import SwiftUI
 struct AsyncNetworkSessionDemoApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
         }
     }
 }
