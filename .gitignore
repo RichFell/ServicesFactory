@@ -1,1 +1,22 @@
-*.SwiftFileList
+# Swift Package Manager build artifacts
+.build/
+.index-build/
+
+# Local user configurations & Xcode state
+.swiftpm/xcode/xcuserdata/
+xcuserdata/
+
+# Package dependencies (handled automatically by SPM)
+Packages/
+Package.pins
+
+# Optional: Uncomment if your package generates an Xcode project locally
+# *.xcodeproj
+
+# Optional: Deciding on Package.resolved
+# - Keep it commented out (default) if this is an App or executable (to lock dependency versions).
+# - Uncomment it if this is a reusable library package and you don't want to force dependency locks on users.
+# Package.resolved
+
+# OS-specific temporary files
+.DS_Store

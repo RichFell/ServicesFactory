@@ -6,5 +6,5 @@ public protocol ServicesFactory: Sendable {
     /// Returns the service associated with `serviceType`.
     func service<ServiceImplementation: Service>(
         for serviceType: ServiceType
-    ) -> ServiceImplementation
+    ) async -> ServiceImplementation
 }

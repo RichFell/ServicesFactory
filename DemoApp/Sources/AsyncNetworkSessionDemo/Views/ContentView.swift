@@ -1,7 +1,8 @@
+import AsyncNetworkSession
 import SwiftUI
 
 struct ContentView: View {
-    let serviceName: String
+    @State private var serviceName = "Loading service…"
 
     var body: some View {
         ContentUnavailableView(
@@ -9,9 +10,21 @@ struct ContentView: View {
             systemImage: "network",
             description: Text("Resolved service: \(serviceName)")
         )
+        .task {
+            let services = Services()
+            await services.register(
+                DemoNetworkSessionService(),
+                for: .asyncNetworkSession
+            )
+
+            let networkService: DemoNetworkSessionService = await services.service(
+                for: .asyncNetworkSession
+            )
+            serviceName = networkService.name
+        }
     }
 }
 
 #Preview {
-    ContentView(serviceName: "Demo network session")
+    ContentView()
 }
