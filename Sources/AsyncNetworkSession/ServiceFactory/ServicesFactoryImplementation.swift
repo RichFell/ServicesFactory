@@ -2,7 +2,7 @@
 ///
 /// Register a concrete implementation for each ``ServiceType`` before
 /// requesting it. Registered instances are retained and reused.
-public actor Services: ServicesFactory {
+public actor ServicesFactoryImplementation: ServicesFactory {
     private var registeredServices: [ServiceType: any Service] = [:]
 
     /// Creates an empty service registry.

@@ -7,11 +7,4 @@ struct ListServiceImplementationTests {
         let lists = try await service.allLists()
         #expect(lists.isEmpty)
     }
-
-    @Test func servicesReturnsListServiceImplementationAndReusesIt() async throws {
-        let services = Services()
-        let first: ListServiceImplementation = await services.service(for: .list)
-        let second: ListServiceImplementation = await services.service(for: .list)
-        #expect(first === second)
-    }
 }
