@@ -1,5 +1,5 @@
 /// A list returned by a ``ListService``.
-public struct List: Sendable, Decodable {
+public struct List: Sendable {
     /// The tasks contained in the list.
     public let tasks: [Task]
     
