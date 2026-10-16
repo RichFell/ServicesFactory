@@ -4,7 +4,7 @@ import Testing
 
 struct ListRepositoryImplementationTests {
     @Test func allListsDecodesFetchedData() async throws {
-        let repository = ListRepositoryImplementation { Data("[{}]".utf8) }
+        let repository = ListRepositoryImplementation { Data(#"[{"tasks":[]}]"#.utf8) }
         let lists = try await repository.allLists()
         #expect(lists.count == 1)
     }

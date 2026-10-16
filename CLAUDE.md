@@ -1,4 +1,4 @@
-# AsyncNetworkSession
+# ServicesFactory
 
 Swift 6 package (`Sources/`, `Tests/`) providing a service-layer networking library, plus an iOS demo app (`DemoApp/`).
 
@@ -29,12 +29,9 @@ Swift 6 package (`Sources/`, `Tests/`) providing a service-layer networking libr
 - Create Swift files on disk. Do not hand-edit `.pbxproj` files.
 
 ## Known Gotchas
-- Record platform-specific limitations here as they come up, such as iOS API bugs or view modifier ordering issues.
 
 
 ## Token Efficiencies
-
-### Token-efficient agent work
 
 - Search first, then read only the lines you need. Don't re-read a file you already have unless it changed.
 - Run the narrowest test first (`-only-testing:` or `--filter`). Run the full suite once, at the end.
