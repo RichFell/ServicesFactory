@@ -14,8 +14,7 @@
     "deny": [
       "Bash(rm -rf *)",
       "Bash(git push *)",
-      "Bash(git rebase *)",
-      "Bash(pod install)"
+      "Bash(git rebase *)"
     ]
   }
 }
