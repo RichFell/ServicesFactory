@@ -4,26 +4,26 @@
 import PackageDescription
 
 let package = Package(
-    name: "AsyncNetworkSession",
+    name: "ServicesFactory",
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "AsyncNetworkSession",
-            targets: ["AsyncNetworkSession"]
+            name: "ServicesFactory",
+            targets: ["ServicesFactory"]
         ),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "AsyncNetworkSession",
+            name: "ServicesFactory",
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
             ],
         ),
         .testTarget(
-            name: "AsyncNetworkSessionTests",
-            dependencies: ["AsyncNetworkSession"],
+            name: "ServicesFactoryTests",
+            dependencies: ["ServicesFactory"],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
             ],
