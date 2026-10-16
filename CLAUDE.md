@@ -1,6 +1,6 @@
 # ServicesFactory
 
-Swift 6 package (`Sources/`, `Tests/`) providing a service-layer networking library, plus an iOS demo app (`DemoApp/`).
+Swift 6 package (`Sources/`, `Tests/`) providing a service-layer networking library.
 
 ## Commands
 - Build and test through the Xcode MCP tools (`BuildProject`, `RunAllTests`, `RunSomeTests`).
