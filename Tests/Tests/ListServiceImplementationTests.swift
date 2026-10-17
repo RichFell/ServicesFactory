@@ -1,5 +1,5 @@
 import Testing
-@testable import AsyncNetworkSession
+@testable import ServicesFactory
 
 struct ListServiceImplementationTests {
     @Test func allListsReturnsNoListsByDefault() async throws {

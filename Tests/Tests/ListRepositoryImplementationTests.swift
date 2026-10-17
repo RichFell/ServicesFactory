@@ -1,10 +1,10 @@
 import Foundation
 import Testing
-@testable import AsyncNetworkSession
+@testable import ServicesFactory
 
 struct ListRepositoryImplementationTests {
     @Test func allListsDecodesFetchedData() async throws {
-        let repository = ListRepositoryImplementation { Data(#"[{"tasks":[]}]"#.utf8) }
+        let repository = ListRepositoryImplementation { Data(#"[{"identifier":"a","title":"A","items":[]}]"#.utf8) }
         let lists = try await repository.allLists()
         #expect(lists.count == 1)
     }

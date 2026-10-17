@@ -9,15 +9,19 @@ struct ListBuilder: Sendable {
     func decode(_ data: Data) throws -> [List] {
         try JSONDecoder().decode([RawList].self, from: data).map(\.model)
     }
-    
-    /// Raw representation of a ``Task`` as received from a data source.
-    private struct RawTask: Decodable {
-        let identifier: String
-        let title: String
-        let isComplete: Bool
 
-        var model: Task {
-            Task(identifier: identifier, title: title, isComplete: isComplete)
+    /// Raw representation of a ``ListItem`` as received from a data source.
+    private struct RawListItem: Decodable {
+        let identifier: String
+        let name: String
+        let weightInGrams: Double?
+
+        var model: ListItem {
+            ListItem(
+                identifier: identifier,
+                name: name,
+                weight: weightInGrams.map { Measurement(value: $0, unit: .grams) }
+            )
         }
     }
 
@@ -25,10 +29,17 @@ struct ListBuilder: Sendable {
     private struct RawList: Decodable {
         let identifier: String
         let title: String
-        let tasks: [RawTask]
+        let fields: [String]?
+        let items: [RawListItem]
 
         var model: List {
-            List(tasks: tasks.map(\.model), title: title, identifier: identifier)
+            List(
+                identifier: identifier,
+                title: title,
+                // Unknown fields from newer data sources are ignored.
+                fields: Set((fields ?? []).compactMap(ListField.init(rawValue:))),
+                items: items.map(\.model)
+            )
         }
     }
 }

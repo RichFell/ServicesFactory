@@ -1,5 +1,5 @@
 import Testing
-@testable import AsyncNetworkSession
+@testable import ServicesFactory
 
 struct ServicesFactoryImplementationTests {
     @Test func serviceCreatesListServiceImplementationByDefault() async {

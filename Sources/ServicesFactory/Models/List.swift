@@ -1,22 +1,27 @@
 /// A list returned by a ``ListService``.
 public struct List: Sendable {
-    /// The tasks contained in the list.
-    public let tasks: [Task]
-    
-    /// Title of the list
-    public let title: String
-    
     /// Identifier for list
     public let identifier: String
 
-    /// Creates a list model with the given tasks.
+    /// Title of the list
+    public let title: String
+
+    /// The optional attributes carried by the items in this list. Empty for a plain checklist.
+    public let fields: Set<ListField>
+
+    /// The items contained in the list.
+    public let items: [ListItem]
+
+    /// Creates a list model with the given items.
     public init(
-        tasks: [Task] = [],
+        identifier: String = "",
         title: String = "",
-        identifier: String = ""
+        fields: Set<ListField> = [],
+        items: [ListItem] = []
     ) {
-        self.tasks = tasks
-        self.title = title
         self.identifier = identifier
+        self.title = title
+        self.fields = fields
+        self.items = items
     }
 }

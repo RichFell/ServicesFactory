@@ -13,7 +13,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.11.1")
+        .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.12.1")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
