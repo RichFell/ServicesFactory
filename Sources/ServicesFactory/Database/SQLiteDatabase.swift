@@ -24,9 +24,11 @@ final class SQLiteDatabase: Sendable {
     /// - Parameters:
     ///   - location: Where the database lives. Defaults to a file in Application Support.
     ///   - migrations: Ordered schema migrations. Already applied identifiers are skipped.
+    ///     Defaults to ``Migration/all`` so a new database always gets the full schema and an
+    ///     existing one is upgraded to it.
     init(
         location: Location = .applicationSupport(fileName: "ServicesFactory.sqlite"),
-        migrations: [Migration] = []
+        migrations: [Migration] = Migration.all
     ) throws {
         let writer = try Self.makeWriter(location: location)
         try Self.migrate(writer, with: migrations)
@@ -80,6 +82,17 @@ final class SQLiteDatabase: Sendable {
             try T.delete(record).execute(db)
         }
         Self.logger.debug("Deleted \(String(describing: T.self)) record")
+    }
+
+    /// Deletes every row of `type` matching `isIncluded`.
+    func delete<T: Table & Sendable>(
+        _ type: T.Type,
+        where isIncluded: @escaping @Sendable (T.TableColumns) -> some QueryExpression<Bool>
+    ) async throws {
+        try await writer.write { db in
+            try T.where(isIncluded).delete().execute(db)
+        }
+        Self.logger.debug("Deleted matching \(String(describing: T.self)) record(s)")
     }
 
     // MARK: - Setup

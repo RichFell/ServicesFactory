@@ -24,8 +24,8 @@ public actor ServicesFactoryImplementation: ServicesFactory {
         }
         var newService: ServiceImplementation?
         switch serviceType {
-        case .list:
-            newService = ListServiceImplementation() as? ServiceImplementation
+        case .eventList:
+            newService = EventListServiceImplementation() as? ServiceImplementation
         }
         guard let newService else {
             preconditionFailure("Failed to create a service")

@@ -9,41 +9,41 @@ import Testing
 @testable import ServicesFactory
 
 struct ServicesFactoryImplementationTests {
-    @Test func serviceCreatesListServiceImplementationByDefault() async {
+    @Test func serviceCreatesEventListServiceImplementationByDefault() async {
         let factory = ServicesFactoryImplementation()
-        let service: ListServiceImplementation = await factory.service(for: .list)
-        #expect(service is ListServiceImplementation)
+        let service: EventListServiceImplementation = await factory.service(for: .eventList)
+        #expect(service is EventListServiceImplementation)
     }
 
     @Test func serviceReusesCreatedInstance() async {
         let factory = ServicesFactoryImplementation()
-        let first: ListServiceImplementation = await factory.service(for: .list)
-        let second: ListServiceImplementation = await factory.service(for: .list)
+        let first: EventListServiceImplementation = await factory.service(for: .eventList)
+        let second: EventListServiceImplementation = await factory.service(for: .eventList)
         #expect(first === second)
     }
 
     @Test func registeredServiceIsReturned() async {
         let factory = ServicesFactoryImplementation()
         let mock = MockListService()
-        await factory.register(mock, for: .list)
-        let service: MockListService = await factory.service(for: .list)
+        await factory.register(mock, for: .eventList)
+        let service: MockListService = await factory.service(for: .eventList)
         #expect(service === mock)
     }
 
     @Test func registeringReplacesPreviouslyCreatedService() async {
         let factory = ServicesFactoryImplementation()
-        let _: ListServiceImplementation = await factory.service(for: .list)
+        let _: EventListServiceImplementation = await factory.service(for: .eventList)
         let mock = MockListService()
-        await factory.register(mock, for: .list)
-        let service: MockListService = await factory.service(for: .list)
+        await factory.register(mock, for: .eventList)
+        let service: MockListService = await factory.service(for: .eventList)
         #expect(service === mock)
     }
 
     @Test func factoriesDoNotShareServices() async {
         let firstFactory = ServicesFactoryImplementation()
         let secondFactory = ServicesFactoryImplementation()
-        let first: ListServiceImplementation = await firstFactory.service(for: .list)
-        let second: ListServiceImplementation = await secondFactory.service(for: .list)
+        let first: EventListServiceImplementation = await firstFactory.service(for: .eventList)
+        let second: EventListServiceImplementation = await secondFactory.service(for: .eventList)
         #expect(first !== second)
     }
 }

@@ -5,7 +5,7 @@
 //  Created by Rich Fellure on 10/15/26.
 //
 
-/// A list returned by a ``ListService``.
+/// A list returned by a ``EventListService``.
 public struct List: Sendable {
     /// Identifier for list
     public let identifier: String

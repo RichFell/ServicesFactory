@@ -1,5 +1,5 @@
 //
-//  ListBuilder.swift
+//  EventListBuilder.swift
 //  ServicesFactory
 //
 //  Created by Rich Fellure on 10/15/26.
@@ -8,7 +8,7 @@
 import Foundation
 
 /// Decodes raw list data into ``List`` models.
-struct ListBuilder: Sendable {
+struct EventListBuilder: Sendable {
 
     init() {}
 

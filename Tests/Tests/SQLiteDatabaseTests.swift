@@ -75,4 +75,42 @@ struct SQLiteDatabaseTests {
 
         #expect(try await second.fetchAll(Note.self) == [Note(id: 1, title: "kept")])
     }
+
+    @Test func laterMigrationUpgradesExistingDatabaseAndKeepsData() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("test.sqlite")
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let addSubtitle = SQLiteDatabase.Migration(identifier: "add-notes-subtitle") { db in
+            try db.execute(sql: #"ALTER TABLE "notes" ADD COLUMN "subtitle" TEXT NOT NULL DEFAULT ''"#)
+        }
+
+        let v1 = try SQLiteDatabase(location: .file(url), migrations: [Self.createNotes])
+        try await v1.insert([Note(id: 1, title: "kept")])
+
+        // Only the new migration runs; the existing row survives the schema change.
+        let v2 = try SQLiteDatabase(location: .file(url), migrations: [Self.createNotes, addSubtitle])
+
+        #expect(try await v2.fetchAll(Note.self) == [Note(id: 1, title: "kept")])
+    }
+
+    @Test func defaultMigrationsCreateFileAndListTables() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("test.sqlite")
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let database = try SQLiteDatabase(location: .file(url))
+
+        #expect(FileManager.default.fileExists(atPath: url.path))
+        #expect(try await database.fetchAll(ListRecord.self).isEmpty)
+        #expect(try await database.fetchAll(ListFieldRecord.self).isEmpty)
+        #expect(try await database.fetchAll(ListItemRecord.self).isEmpty)
+    }
+
+    @Test func registeredMigrationIdentifiersAreUnique() {
+        let identifiers = SQLiteDatabase.Migration.all.map(\.identifier)
+
+        #expect(Set(identifiers).count == identifiers.count)
+    }
 }
