@@ -5,13 +5,67 @@
 //  Created by Rich Fellure on 10/15/26.
 //
 
-/// A service that retrieves list models.
+/// A service that retrieves and edits lists, their items, and events.
+///
+/// Items are standalone and can be shared by several lists. Deleting a list or removing an item
+/// from a list never deletes the item; only ``deleteItem(identifier:)`` does.
 public protocol EventListService: Service {
     /// Retrieves all available lists.
     func allLists() async throws -> [List]
 
     /// Retrieves all available events.
     func allEvents() async throws -> [Event]
+
+    /// Creates a list with its fields and items.
+    ///
+    /// Items whose identifier already exists are linked to the new list instead of duplicated.
+    /// - Parameter list: The list to create.
+    func createList(_ list: List) async throws
+
+    /// Updates a list's title and fields. Its items are managed with the item functions.
+    ///
+    /// - Parameter list: The list carrying the new title and fields.
+    /// - Throws: ``EventListError/listNotFound(identifier:)`` when the list does not exist.
+    func updateList(_ list: List) async throws
+
+    /// Deletes a list and removes it from any event. Its items are kept for reuse in other lists.
+    ///
+    /// - Parameter identifier: The identifier of the list to delete. Does nothing if it does not exist.
+    func deleteList(identifier: String) async throws
+
+    /// Adds an item to the end of a list, creating the item if it is new or updating it if it exists.
+    ///
+    /// - Parameters:
+    ///   - item: The item to add.
+    ///   - listIdentifier: The identifier of the list to add it to.
+    /// - Throws: ``EventListError/listNotFound(identifier:)`` when the list does not exist.
+    func addItem(_ item: ListItem, toListWithIdentifier listIdentifier: String) async throws
+
+    /// Removes an item from a list. The item is kept and stays in its other lists.
+    ///
+    /// - Parameters:
+    ///   - identifier: The identifier of the item to remove.
+    ///   - listIdentifier: The identifier of the list to remove it from.
+    func removeItem(identifier: String, fromListWithIdentifier listIdentifier: String) async throws
+
+    /// Updates an item everywhere it appears.
+    ///
+    /// - Parameter item: The item carrying the new name and weight.
+    /// - Throws: ``EventListError/itemNotFound(identifier:)`` when the item does not exist.
+    func updateItem(_ item: ListItem) async throws
+
+    /// Deletes an item from every list and clears its completion in every event.
+    ///
+    /// - Parameter identifier: The identifier of the item to delete. Does nothing if it does not exist.
+    func deleteItem(identifier: String) async throws
+
+    /// Moves an item to a new position within a list.
+    ///
+    /// - Parameters:
+    ///   - identifier: The identifier of the item to move.
+    ///   - listIdentifier: The identifier of the list containing the item.
+    ///   - position: The new zero-based index, clamped to the list's bounds.
+    /// - Throws: ``EventListError/listNotFound(identifier:)`` or
+    ///   ``EventListError/itemNotFound(identifier:)`` when either does not exist.
+    func moveItem(identifier: String, inListWithIdentifier listIdentifier: String, to position: Int) async throws
 }
-
-

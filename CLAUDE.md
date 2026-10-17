@@ -17,7 +17,7 @@ Swift 6 package providing a service-layer library with networking and local pers
 - Add `Logger` statements (`os` framework) to complex async flows such as networking.
 - Documentation should be added to public functions and prefer documentation on protocol declaration where applicable
 - Nested types should be moved to the bottom of the files they are declared in.
-- Functions with more than 3 arguments should put each argument on their own line.
+- Functions with more than 3 arguments should put each argument on their own line at call site, as well as when declared.
 - Protocol-oriented pattern in regards to references of types allowing easy injection of different types. 
 - Omit `self.` unless required.
 - Omit `any` for protocol-typed parameters. Use `some` or `any` only when the compiler requires it.

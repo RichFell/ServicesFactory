@@ -15,25 +15,29 @@ struct EventListRecordBuilder: Sendable {
         ListRecords(
             list: ListRecord(list),
             fields: ListFieldRecord.records(for: list),
-            items: ListItemRecord.records(for: list)
+            items: list.items.map(ListItemRecord.init),
+            links: ListItemLinkRecord.records(for: list)
         )
     }
 
     /// Rebuilds public lists from stored rows, in the order of `lists`.
     ///
-    /// Fields and items are matched to their list by `listID`.
+    /// Fields are matched to their list by `listID`. Items are resolved from `items` through the
+    /// list's `links`, ordered by `position`. Links pointing at a missing item are skipped.
     func lists(
         from lists: [ListRecord],
         fields: [ListFieldRecord],
-        items: [ListItemRecord]
+        items: [ListItemRecord],
+        links: [ListItemLinkRecord]
     ) -> [List] {
         let fieldsByList = Dictionary(grouping: fields, by: \.listID)
-        let itemsByList = Dictionary(grouping: items, by: \.listID)
+        let linksByList = Dictionary(grouping: links, by: \.listID)
+        let itemsByID = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         return lists.map { record in
-            record.makeList(
-                fields: fieldsByList[record.id] ?? [],
-                items: itemsByList[record.id] ?? []
-            )
+            let listItems = (linksByList[record.id] ?? [])
+                .sorted { $0.position < $1.position }
+                .compactMap { itemsByID[$0.itemID]?.makeListItem() }
+            return record.makeList(fields: fieldsByList[record.id] ?? [], items: listItems)
         }
     }
 
@@ -67,5 +71,6 @@ extension EventListRecordBuilder {
         let list: ListRecord
         let fields: [ListFieldRecord]
         let items: [ListItemRecord]
+        let links: [ListItemLinkRecord]
     }
 }

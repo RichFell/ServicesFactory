@@ -7,7 +7,7 @@
 
 import SQLiteData
 
-/// The stored row for a ``List``. Its fields and items live in ``ListFieldRecord`` and ``ListItemRecord``.
+/// The stored row for a ``List``. Its fields live in ``ListFieldRecord`` and its items in ``ListItemRecord``, attached by ``ListItemLinkRecord``.
 @Table("lists")
 struct ListRecord: Equatable, Sendable {
     let id: String
@@ -19,13 +19,13 @@ struct ListRecord: Equatable, Sendable {
         title = list.title
     }
 
-    /// Rebuilds the public ``List`` from this row and its related rows.
-    func makeList(fields: [ListFieldRecord], items: [ListItemRecord]) -> List {
+    /// Rebuilds the public ``List`` from this row, its field rows and its already ordered `items`.
+    func makeList(fields: [ListFieldRecord], items: [ListItem]) -> List {
         List(
             identifier: id,
             title: title,
             fields: Set(fields.compactMap { ListField(rawValue: $0.field) }),
-            items: items.sorted { $0.position < $1.position }.map { $0.makeListItem() }
+            items: items
         )
     }
 }

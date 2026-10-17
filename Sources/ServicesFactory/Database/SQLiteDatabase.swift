@@ -95,6 +95,13 @@ final class SQLiteDatabase: Sendable {
         Self.logger.debug("Deleted matching \(String(describing: T.self)) record(s)")
     }
 
+    // MARK: - Transactions
+
+    /// Runs `updates` in a single transaction: every change is applied, or none if it throws.
+    func transaction(_ updates: @escaping @Sendable (Database) throws -> Void) async throws {
+        try await writer.write(updates)
+    }
+
     // MARK: - Setup
 
     private static func makeWriter(location: Location) throws -> any DatabaseWriter {

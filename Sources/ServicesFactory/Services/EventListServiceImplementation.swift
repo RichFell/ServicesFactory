@@ -7,7 +7,7 @@
 
 /// The default ``EventListService`` implementation.
 ///
-/// Reads lists and events from the ``Dependency/localCache`` repository.
+/// Reads and edits lists and events through the ``Dependency/localCache`` repository.
 final class EventListServiceImplementation: EventListService {
     private let dependency: Dependency
 
@@ -22,15 +22,47 @@ final class EventListServiceImplementation: EventListService {
     func allEvents() async throws -> [Event] {
         try await dependency.localCache.allEvents()
     }
+
+    func createList(_ list: List) async throws {
+        try await dependency.localCache.createList(list)
+    }
+
+    func updateList(_ list: List) async throws {
+        try await dependency.localCache.updateList(list)
+    }
+
+    func deleteList(identifier: String) async throws {
+        try await dependency.localCache.deleteList(identifier: identifier)
+    }
+
+    func addItem(_ item: ListItem, toListWithIdentifier listIdentifier: String) async throws {
+        try await dependency.localCache.addItem(item, toListWithIdentifier: listIdentifier)
+    }
+
+    func removeItem(identifier: String, fromListWithIdentifier listIdentifier: String) async throws {
+        try await dependency.localCache.removeItem(identifier: identifier, fromListWithIdentifier: listIdentifier)
+    }
+
+    func updateItem(_ item: ListItem) async throws {
+        try await dependency.localCache.updateItem(item)
+    }
+
+    func deleteItem(identifier: String) async throws {
+        try await dependency.localCache.deleteItem(identifier: identifier)
+    }
+
+    func moveItem(identifier: String, inListWithIdentifier listIdentifier: String, to position: Int) async throws {
+        try await dependency.localCache.moveItem(identifier: identifier, inListWithIdentifier: listIdentifier, to: position)
+    }
 }
 
 extension EventListServiceImplementation {
     /// The collaborators an ``EventListServiceImplementation`` needs.
     struct Dependency: Sendable {
-        /// The repository holding locally cached lists and events.
-        let localCache: EventListRepository
+        /// The repository holding locally cached lists and events, and applying edits to them.
+        let localCache: EventListWritableRepository
 
-        init(localCache: EventListRepository) {
+        init(localCache: EventListWritableRepository) {
             self.localCache = localCache
         }
 

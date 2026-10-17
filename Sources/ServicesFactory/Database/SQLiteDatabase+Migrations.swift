@@ -13,8 +13,44 @@ extension SQLiteDatabase.Migration {
     /// again, so the change would only reach new installs. Identifiers must be unique and stable.
     static let all: [SQLiteDatabase.Migration] = [
         .createListTables,
-        .createEventTables
+        .createEventTables,
+        .createListItemLinks
     ]
+
+    /// Makes items standalone so one item can belong to many lists.
+    ///
+    /// Creates `listItemLinks` (list, item, position), copies each existing item's `listID` and
+    /// `position` into it, then rebuilds `listItems` without those two columns. Deleting a list
+    /// cascades to its links only, so the items survive. Relies on GRDB disabling foreign key
+    /// enforcement while a migration runs, which makes dropping the old `listItems` safe.
+    static let createListItemLinks = SQLiteDatabase.Migration(identifier: "create-list-item-links") { db in
+        try db.execute(sql: """
+            CREATE TABLE "listItemLinks" (
+                "listID" TEXT NOT NULL REFERENCES "lists"("id") ON DELETE CASCADE,
+                "itemID" TEXT NOT NULL REFERENCES "listItems"("id") ON DELETE CASCADE,
+                "position" INTEGER NOT NULL,
+                PRIMARY KEY ("listID", "itemID")
+            )
+            """)
+        try db.execute(sql: """
+            INSERT INTO "listItemLinks" ("listID", "itemID", "position")
+            SELECT "listID", "id", "position" FROM "listItems"
+            """)
+        try db.execute(sql: """
+            CREATE TABLE "listItemsNew" (
+                "id" TEXT PRIMARY KEY NOT NULL,
+                "name" TEXT NOT NULL,
+                "weightInGrams" REAL
+            )
+            """)
+        try db.execute(sql: """
+            INSERT INTO "listItemsNew" ("id", "name", "weightInGrams")
+            SELECT "id", "name", "weightInGrams" FROM "listItems"
+            """)
+        try db.execute(sql: #"DROP TABLE "listItems""#)
+        try db.execute(sql: #"ALTER TABLE "listItemsNew" RENAME TO "listItems""#)
+        try db.execute(sql: #"CREATE INDEX "listItemLinks_itemID" ON "listItemLinks"("itemID")"#)
+    }
 
     /// Creates the `events`, `eventLists` and `eventCompletedItems` tables backing ``EventRecord``,
     /// ``EventListRecord`` and ``EventCompletedItemRecord``.

@@ -27,9 +27,39 @@ struct EventListRecordBuilderTests {
 
         #expect(records.list.id == "pack")
         #expect(records.fields.map(\.field) == ["weight"])
-        #expect(records.items.map(\.position) == [0, 1])
+        #expect(records.items.map(\.id) == ["a", "b"])
+        #expect(records.links.map(\.itemID) == ["a", "b"])
+        #expect(records.links.map(\.position) == [0, 1])
         #expect(records.items[0].weightInGrams == 2000)
         #expect(records.items[1].weightInGrams == nil)
+    }
+
+    @Test func listsShareAnItemThroughItsLinks() {
+        let shared = ListItem(identifier: "a", name: "A")
+        let first = builder.records(for: List(identifier: "one", items: [shared]))
+        let second = builder.records(for: List(identifier: "two", items: [shared]))
+
+        let lists = builder.lists(
+            from: [first.list, second.list],
+            fields: [],
+            items: first.items,
+            links: first.links + second.links
+        )
+
+        #expect(lists.map { $0.items.map(\.identifier) } == [["a"], ["a"]])
+    }
+
+    @Test func listsSkipLinksForMissingItems() {
+        let records = builder.records(for: list)
+
+        let lists = builder.lists(
+            from: [records.list],
+            fields: records.fields,
+            items: [records.items[1]],
+            links: records.links
+        )
+
+        #expect(lists[0].items.map(\.identifier) == ["b"])
     }
 
     @Test func listsRebuildFromRecordsMatchingByListID() {
@@ -39,7 +69,8 @@ struct EventListRecordBuilderTests {
         let lists = builder.lists(
             from: [records.list, otherRecords.list],
             fields: records.fields + otherRecords.fields,
-            items: records.items.reversed() + otherRecords.items
+            items: records.items + otherRecords.items,
+            links: records.links.reversed() + otherRecords.links
         )
 
         #expect(lists.map(\.identifier) == ["pack", "other"])
