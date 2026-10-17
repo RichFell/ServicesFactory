@@ -9,6 +9,8 @@
 ///
 /// Reads and edits lists and events through the ``Dependency/localCache`` repository.
 final class EventListServiceImplementation: EventListService {
+    let type: ServiceType = .eventList
+
     private let dependency: Dependency
 
     init(dependency: Dependency) {

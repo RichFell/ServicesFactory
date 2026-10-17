@@ -8,10 +8,13 @@
 /// Supplies services based on their ``ServiceType``.
 ///
 /// A conforming factory maps each service type to its corresponding concrete
-/// service implementation.
+/// service implementation, which clients never need to reference.
 public protocol ServicesFactory: Sendable {
     /// Returns the service associated with `serviceType`.
-    func service<ServiceImplementation: Service>(
+    ///
+    /// Clients request the service by its protocol type, for example
+    /// `factory.service(for: .eventList) as EventListService`.
+    func service<Requested: Sendable>(
         for serviceType: ServiceType
-    ) async -> ServiceImplementation
+    ) async -> Requested
 }

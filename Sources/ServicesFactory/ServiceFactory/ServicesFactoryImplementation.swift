@@ -25,33 +25,26 @@ public actor ServicesFactoryImplementation: ServicesFactory {
     }
 
     /// Returns the registered implementation for `serviceType`.
-    public func service<ServiceImplementation: Service>(
+    public func service<Requested: Sendable>(
         for serviceType: ServiceType
-    ) async -> ServiceImplementation {
-        if let service = registeredServices[serviceType] as? ServiceImplementation {
-            return service
+    ) async -> Requested {
+        let service = registeredServices[serviceType] ?? makeService(for: serviceType)
+        guard let requested = service as? Requested else {
+            preconditionFailure("The \(serviceType) service is not a \(Requested.self)")
         }
-        var newService: ServiceImplementation?
+        registeredServices[serviceType] = service
+        return requested
+    }
+
+    private func makeService(for serviceType: ServiceType) -> any Service {
         switch serviceType {
         case .eventList:
             do {
                 let dependency = try EventListServiceImplementation.Dependency.live(databaseLocation: databaseLocation)
-                newService = EventListServiceImplementation(dependency: dependency) as? ServiceImplementation
+                return EventListServiceImplementation(dependency: dependency)
             } catch {
                 preconditionFailure("Failed to open the local cache: \(error)")
             }
         }
-        guard let newService else {
-            preconditionFailure("Failed to create a service")
-        }
-        registeredServices[serviceType] = newService
-        return newService
-    }
-    
-    public func register<ServiceImplementation: Service>(
-        _ service: ServiceImplementation,
-        for serviceType: ServiceType
-    ) {
-        registeredServices[serviceType] = service
     }
 }

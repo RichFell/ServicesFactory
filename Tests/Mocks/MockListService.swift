@@ -9,6 +9,8 @@
 
 /// A ``EventListService`` stand-in used to register custom services with a factory.
 final class MockListService: EventListService {
+    let type: ServiceType = .eventList
+
     func allLists() async throws -> [List] {
         []
     }
