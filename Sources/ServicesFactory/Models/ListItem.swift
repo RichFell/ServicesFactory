@@ -1,3 +1,10 @@
+//
+//  ListItem.swift
+//  ServicesFactory
+//
+//  Created by Rich Fellure on 10/16/26.
+//
+
 import Foundation
 
 /// An item belonging to a ``List``.

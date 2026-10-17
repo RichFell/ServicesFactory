@@ -1,3 +1,10 @@
+//
+//  ListBuilder.swift
+//  ServicesFactory
+//
+//  Created by Rich Fellure on 10/15/26.
+//
+
 import Foundation
 
 /// Decodes raw list data into ``List`` models.

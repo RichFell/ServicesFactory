@@ -1,3 +1,10 @@
+//
+//  Event.swift
+//  ServicesFactory
+//
+//  Created by Rich Fellure on 10/15/26.
+//
+
 /// An event that uses one or more ``List``s and tracks its own completion of their items.
 public struct Event: Sendable {
     /// The unique identifier of the event.
