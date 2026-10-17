@@ -10,20 +10,20 @@ import Testing
 
 struct ServicesFactoryImplementationTests {
     @Test func serviceCreatesEventListServiceImplementationByDefault() async {
-        let factory = ServicesFactoryImplementation()
+        let factory = ServicesFactoryImplementation(databaseLocation: .inMemory)
         let service: EventListServiceImplementation = await factory.service(for: .eventList)
         #expect(service is EventListServiceImplementation)
     }
 
     @Test func serviceReusesCreatedInstance() async {
-        let factory = ServicesFactoryImplementation()
+        let factory = ServicesFactoryImplementation(databaseLocation: .inMemory)
         let first: EventListServiceImplementation = await factory.service(for: .eventList)
         let second: EventListServiceImplementation = await factory.service(for: .eventList)
         #expect(first === second)
     }
 
     @Test func registeredServiceIsReturned() async {
-        let factory = ServicesFactoryImplementation()
+        let factory = ServicesFactoryImplementation(databaseLocation: .inMemory)
         let mock = MockListService()
         await factory.register(mock, for: .eventList)
         let service: MockListService = await factory.service(for: .eventList)
@@ -31,7 +31,7 @@ struct ServicesFactoryImplementationTests {
     }
 
     @Test func registeringReplacesPreviouslyCreatedService() async {
-        let factory = ServicesFactoryImplementation()
+        let factory = ServicesFactoryImplementation(databaseLocation: .inMemory)
         let _: EventListServiceImplementation = await factory.service(for: .eventList)
         let mock = MockListService()
         await factory.register(mock, for: .eventList)
@@ -40,8 +40,8 @@ struct ServicesFactoryImplementationTests {
     }
 
     @Test func factoriesDoNotShareServices() async {
-        let firstFactory = ServicesFactoryImplementation()
-        let secondFactory = ServicesFactoryImplementation()
+        let firstFactory = ServicesFactoryImplementation(databaseLocation: .inMemory)
+        let secondFactory = ServicesFactoryImplementation(databaseLocation: .inMemory)
         let first: EventListServiceImplementation = await firstFactory.service(for: .eventList)
         let second: EventListServiceImplementation = await secondFactory.service(for: .eventList)
         #expect(first !== second)

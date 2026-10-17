@@ -9,15 +9,42 @@ import Testing
 @testable import ServicesFactory
 
 struct EventListServiceImplementationTests {
-    @Test func allListsReturnsNoListsByDefault() async throws {
-        let service = EventListServiceImplementation()
-        let lists = try await service.allLists()
-        #expect(lists.isEmpty)
+    private struct TestError: Error, Equatable {}
+
+    private func makeService(_ repository: MockEventListRepository) -> EventListServiceImplementation {
+        EventListServiceImplementation(dependency: .init(localCache: repository))
     }
 
-    @Test func allEventsReturnsNoEventsByDefault() async throws {
-        let service = EventListServiceImplementation()
-        let events = try await service.allEvents()
-        #expect(events.isEmpty)
+    @Test func allListsReturnsNoListsWhenCacheIsEmpty() async throws {
+        let service = makeService(MockEventListRepository())
+        #expect(try await service.allLists().isEmpty)
+    }
+
+    @Test func allListsReturnsRepositoryLists() async throws {
+        let list = List(identifier: "pack", title: "Packing", fields: [], items: [])
+        let service = makeService(MockEventListRepository(lists: [list]))
+
+        #expect(try await service.allLists().map(\.identifier) == ["pack"])
+    }
+
+    @Test func allEventsReturnsNoEventsWhenCacheIsEmpty() async throws {
+        let service = makeService(MockEventListRepository())
+        #expect(try await service.allEvents().isEmpty)
+    }
+
+    @Test func allListsPropagatesRepositoryError() async {
+        let service = makeService(MockEventListRepository(error: TestError()))
+
+        await #expect(throws: TestError.self) {
+            try await service.allLists()
+        }
+    }
+
+    @Test func allEventsPropagatesRepositoryError() async {
+        let service = makeService(MockEventListRepository(error: TestError()))
+
+        await #expect(throws: TestError.self) {
+            try await service.allEvents()
+        }
     }
 }

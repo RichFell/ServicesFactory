@@ -12,8 +12,17 @@
 public actor ServicesFactoryImplementation: ServicesFactory {
     private var registeredServices: [ServiceType: any Service] = [:]
 
-    /// Creates an empty service registry.
-    public init() {}
+    private let databaseLocation: SQLiteDatabase.Location
+
+    /// Creates an empty service registry whose services cache to the default on-disk database.
+    public init() {
+        self.databaseLocation = .applicationSupport(fileName: "ServicesFactory.sqlite")
+    }
+
+    /// Creates an empty service registry whose services cache to `databaseLocation`.
+    init(databaseLocation: SQLiteDatabase.Location) {
+        self.databaseLocation = databaseLocation
+    }
 
     /// Returns the registered implementation for `serviceType`.
     public func service<ServiceImplementation: Service>(
@@ -25,7 +34,12 @@ public actor ServicesFactoryImplementation: ServicesFactory {
         var newService: ServiceImplementation?
         switch serviceType {
         case .eventList:
-            newService = EventListServiceImplementation() as? ServiceImplementation
+            do {
+                let dependency = try EventListServiceImplementation.Dependency.live(databaseLocation: databaseLocation)
+                newService = EventListServiceImplementation(dependency: dependency) as? ServiceImplementation
+            } catch {
+                preconditionFailure("Failed to open the local cache: \(error)")
+            }
         }
         guard let newService else {
             preconditionFailure("Failed to create a service")

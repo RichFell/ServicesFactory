@@ -8,4 +8,6 @@
 
 ### Builders
 - Builders default to nested `Decodable` structs that the raw data is decoded into, then map those structs to the public model type. Public models are not `Decodable` by default.
+## Testing
+- Every new concrete `class` needs tests verifying its behavior, added to the relevant test target alongside the implementation.
 

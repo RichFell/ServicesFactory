@@ -18,9 +18,9 @@ Swift 6 package providing a service-layer library with networking and local pers
 - Documentation should be added to public functions and prefer documentation on protocol declaration where applicable
 - Nested types should be moved to the bottom of the files they are declared in.
 - Functions with more than 3 arguments should put each argument on their own line.
-
-## Testing
-- Every new concrete `class` needs tests verifying its behavior, added to the relevant test target alongside the implementation.
+- Protocol-oriented pattern in regards to references of types allowing easy injection of different types. 
+- Omit `self.` unless required.
+- Omit `any` for protocol-typed parameters. Use `some` or `any` only when the compiler requires it.
 
 ## Token Efficiencies
 - Search first, then read only the lines you need.
