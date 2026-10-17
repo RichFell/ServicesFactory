@@ -5,6 +5,12 @@ import PackageDescription
 
 let package = Package(
     name: "ServicesFactory",
+    platforms: [
+        .iOS(.v16),
+        .macOS(.v13),
+        .tvOS(.v16),
+        .watchOS(.v9),
+    ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
@@ -20,13 +26,19 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "ServicesFactory",
+            dependencies: [
+                .product(name: "SQLiteData", package: "sqlite-data"),
+            ],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
             ],
         ),
         .testTarget(
             name: "ServicesFactoryTests",
-            dependencies: ["ServicesFactory"],
+            dependencies: [
+                "ServicesFactory",
+                .product(name: "SQLiteData", package: "sqlite-data"),
+            ],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
             ],
