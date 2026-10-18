@@ -16,14 +16,12 @@ struct MockEventListRepository: EventListWritableRepository {
     var error: (any Error & Sendable)?
     let calls = Calls()
 
-    func allLists() async throws -> [List] {
-        if let error { throw error }
-        return lists
+    func allLists() -> AsyncThrowingStream<[List], any Error> {
+        stream(of: lists)
     }
 
-    func allEvents() async throws -> [Event] {
-        if let error { throw error }
-        return events
+    func allEvents() -> AsyncThrowingStream<[Event], any Error> {
+        stream(of: events)
     }
 
     func createList(_ list: List) async throws {
@@ -56,6 +54,19 @@ struct MockEventListRepository: EventListWritableRepository {
 
     func moveItem(identifier: String, inListWithIdentifier listIdentifier: String, to position: Int) async throws {
         try await record("moveItem(\(identifier), \(listIdentifier), \(position))")
+    }
+
+    /// A stream that yields `value` once, or finishes with the canned error.
+    private func stream<Value: Sendable>(of value: Value) -> AsyncThrowingStream<Value, any Error> {
+        let error = error
+        return AsyncThrowingStream { continuation in
+            if let error {
+                continuation.finish(throwing: error)
+            } else {
+                continuation.yield(value)
+                continuation.finish()
+            }
+        }
     }
 
     private func record(_ call: String) async throws {

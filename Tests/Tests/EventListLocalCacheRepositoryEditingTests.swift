@@ -26,7 +26,7 @@ struct EventListLocalCacheRepositoryEditingTests {
     }
 
     private func itemIdentifiers(of listIdentifier: String) async throws -> [String]? {
-        try await repository.allLists().first { $0.identifier == listIdentifier }?.items.map(\.identifier)
+        try await repository.allLists().firstValue().first { $0.identifier == listIdentifier }?.items.map(\.identifier)
     }
 
     // MARK: - Lists
@@ -35,7 +35,7 @@ struct EventListLocalCacheRepositoryEditingTests {
         let created = List(identifier: "pack", title: "Packing", fields: [.weight], items: [tent, stove])
 
         try await repository.createList(created)
-        let stored = try #require(try await repository.allLists().first)
+        let stored = try #require(try await repository.allLists().firstValue().first)
 
         #expect(stored.title == "Packing")
         #expect(stored.fields == [.weight])
@@ -55,7 +55,7 @@ struct EventListLocalCacheRepositoryEditingTests {
         try await repository.createList(list("pack", items: [tent]))
 
         try await repository.updateList(List(identifier: "pack", title: "Renamed", fields: [.weight], items: []))
-        let stored = try #require(try await repository.allLists().first)
+        let stored = try #require(try await repository.allLists().firstValue().first)
 
         #expect(stored.title == "Renamed")
         #expect(stored.fields == [.weight])
@@ -135,7 +135,7 @@ struct EventListLocalCacheRepositoryEditingTests {
         try await repository.createList(list("two", items: [tent]))
 
         try await repository.updateItem(ListItem(identifier: "tent", name: "Big tent"))
-        let lists = try await repository.allLists()
+        let lists = try await repository.allLists().firstValue()
 
         #expect(lists.flatMap(\.items).map(\.name) == ["Big tent", "Big tent"])
         #expect(lists.flatMap(\.items).allSatisfy { $0.weight == nil })
@@ -158,7 +158,7 @@ struct EventListLocalCacheRepositoryEditingTests {
 
         #expect(try await itemIdentifiers(of: "one") == ["stove"])
         #expect(try await itemIdentifiers(of: "two") == [])
-        #expect(try await repository.allEvents().first?.completedItemIdentifiers == ["stove"])
+        #expect(try await repository.allEvents().firstValue().first?.completedItemIdentifiers == ["stove"])
     }
 
     @Test func moveItemReordersWithinTheList() async throws {

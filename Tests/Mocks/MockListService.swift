@@ -11,12 +11,18 @@
 final class MockListService: EventListService {
     let type: ServiceType = .eventList
 
-    func allLists() async throws -> [List] {
-        []
+    func allLists() -> AsyncThrowingStream<[List], any Error> {
+        AsyncThrowingStream { continuation in
+            continuation.yield([])
+            continuation.finish()
+        }
     }
 
-    func allEvents() async throws -> [Event] {
-        []
+    func allEvents() -> AsyncThrowingStream<[Event], any Error> {
+        AsyncThrowingStream { continuation in
+            continuation.yield([])
+            continuation.finish()
+        }
     }
 
     func createList(_ list: List) async throws {}

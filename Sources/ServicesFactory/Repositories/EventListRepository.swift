@@ -7,9 +7,15 @@
 
 /// A repository that retrieves list models from a data source.
 protocol EventListRepository: Sendable {
-    /// Retrieves all available lists.
-    func allLists() async throws -> [List]
+    /// Streams all available lists.
+    ///
+    /// Yields the current lists on subscription, then again whenever they change if the source
+    /// supports it. The stream finishes with an error if the lists cannot be retrieved.
+    func allLists() -> AsyncThrowingStream<[List], any Error>
 
-    /// Retrieves all available events, with their lists and completed items resolved.
-    func allEvents() async throws -> [Event]
+    /// Streams all available events, with their lists and completed items resolved.
+    ///
+    /// Yields the current events on subscription, then again whenever they change if the source
+    /// supports it. The stream finishes with an error if the events cannot be retrieved.
+    func allEvents() -> AsyncThrowingStream<[Event], any Error>
 }

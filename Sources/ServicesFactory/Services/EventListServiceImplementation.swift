@@ -17,12 +17,12 @@ final class EventListServiceImplementation: EventListService {
         self.dependency = dependency
     }
 
-    func allLists() async throws -> [List] {
-        try await dependency.localCache.allLists()
+    func allLists() -> AsyncThrowingStream<[List], any Error> {
+        dependency.localCache.allLists()
     }
 
-    func allEvents() async throws -> [Event] {
-        try await dependency.localCache.allEvents()
+    func allEvents() -> AsyncThrowingStream<[Event], any Error> {
+        dependency.localCache.allEvents()
     }
 
     func createList(_ list: List) async throws {

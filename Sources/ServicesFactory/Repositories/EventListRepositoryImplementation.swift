@@ -23,13 +23,28 @@ final class EventListRepositoryImplementation: EventListRepository {
         self.fetchData = fetchData
     }
 
-    func allLists() async throws -> [List] {
-        let data = try await fetchData()
-        return try builder.decode(data)
+    /// Yields the decoded lists once, then finishes. The raw data source does not report changes.
+    func allLists() -> AsyncThrowingStream<[List], any Error> {
+        let builder = builder
+        let fetchData = fetchData
+        return AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    continuation.yield(try builder.decode(try await fetchData()))
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
     }
 
-    func allEvents() async throws -> [Event] {
+    func allEvents() -> AsyncThrowingStream<[Event], any Error> {
         // The raw data source only provides lists, so there are no events to return.
-        []
+        AsyncThrowingStream { continuation in
+            continuation.yield([])
+            continuation.finish()
+        }
     }
 }

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import struct GRDB.ValueObservation
 import OSLog
 import SQLiteData
 
@@ -64,6 +65,33 @@ final class SQLiteDatabase: Sendable {
         }
     }
 
+    /// Streams the result of `fetch`, first with the current database contents and then again
+    /// after every committed change to the tables `fetch` reads.
+    ///
+    /// Each call starts its own observation, so a new subscriber immediately receives the
+    /// latest value. The stream ends with the error if `fetch` throws, and cancelling the
+    /// consumer stops the observation.
+    func observe<Value: Sendable>(
+        _ fetch: @escaping @Sendable (Database) throws -> Value
+    ) -> AsyncThrowingStream<Value, any Error> {
+        let observation = ValueObservation.tracking(fetch)
+        let writer = writer
+        return AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    for try await value in observation.values(in: writer) {
+                        continuation.yield(value)
+                    }
+                    continuation.finish()
+                } catch {
+                    Self.logger.error("Observation failed: \(error.localizedDescription)")
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
     // MARK: - Update
 
     /// Overwrites the stored row whose primary key matches `record`.
@@ -89,8 +117,11 @@ final class SQLiteDatabase: Sendable {
         _ type: T.Type,
         where isIncluded: @escaping @Sendable (T.TableColumns) -> some QueryExpression<Bool>
     ) async throws {
+        // Built outside the closure so the opaque predicate type isn't captured.
+        // The statement is an immutable value used once, so crossing into the writer is safe.
+        nonisolated(unsafe) let statement = T.where(isIncluded).delete()
         try await writer.write { db in
-            try T.where(isIncluded).delete().execute(db)
+            try statement.execute(db)
         }
         Self.logger.debug("Deleted matching \(String(describing: T.self)) record(s)")
     }

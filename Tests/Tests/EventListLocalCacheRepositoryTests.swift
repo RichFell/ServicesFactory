@@ -30,14 +30,37 @@ struct EventListLocalCacheRepositoryTests {
     @Test func allListsIsEmptyWhenNothingIsCached() async throws {
         let repository = try makeRepository()
 
-        #expect(try await repository.allLists().isEmpty)
+        #expect(try await repository.allLists().firstValue().isEmpty)
+    }
+
+    @Test func allListsEmitsAgainWhenListsChange() async throws {
+        let repository = try makeRepository()
+        var iterator = repository.allLists().makeAsyncIterator()
+
+        let initial = try await iterator.next()
+        try await repository.createList(makePackingList())
+        let updated = try await iterator.next()
+
+        #expect(initial?.isEmpty == true)
+        #expect(updated?.map(\.identifier) == ["pack"])
+    }
+
+    @Test func newSubscriptionReceivesLatestLists() async throws {
+        let repository = try makeRepository()
+        try await repository.createList(makePackingList())
+
+        let first = try await repository.allLists().firstValue()
+        let second = try await repository.allLists().firstValue()
+
+        #expect(first.map(\.identifier) == ["pack"])
+        #expect(second.map(\.identifier) == ["pack"])
     }
 
     @Test func storedListRoundTripsThroughPublicModel() async throws {
         let repository = try makeRepository()
 
         try await repository.store([makePackingList()])
-        let lists = try await repository.allLists()
+        let lists = try await repository.allLists().firstValue()
 
         #expect(lists.count == 1)
         #expect(lists[0].identifier == "pack")
@@ -57,7 +80,7 @@ struct EventListLocalCacheRepositoryTests {
             items: [ListItem(identifier: "map", name: "Map")]
         )
         try await repository.store([replacement])
-        let lists = try await repository.allLists()
+        let lists = try await repository.allLists().firstValue()
 
         #expect(lists.count == 1)
         #expect(lists[0].title == "Renamed")
@@ -68,7 +91,7 @@ struct EventListLocalCacheRepositoryTests {
     @Test func allEventsIsEmptyWhenNothingIsCached() async throws {
         let repository = try makeRepository()
 
-        #expect(try await repository.allEvents().isEmpty)
+        #expect(try await repository.allEvents().firstValue().isEmpty)
     }
 
     @Test func allEventsBuildsEventsFromStoredRows() async throws {
@@ -87,7 +110,7 @@ struct EventListLocalCacheRepositoryTests {
         try await database.insert(EventListRecord.records(for: event))
         try await database.insert(EventCompletedItemRecord.records(for: event))
 
-        let events = try await repository.allEvents()
+        let events = try await repository.allEvents().firstValue()
 
         #expect(events.count == 1)
         #expect(events[0].title == "Trip")
@@ -102,7 +125,7 @@ struct EventListLocalCacheRepositoryTests {
         try await repository.store([makePackingList()])
 
         try await repository.store([List(identifier: "other", title: "Other")])
-        let identifiers = try await repository.allLists().map(\.identifier)
+        let identifiers = try await repository.allLists().firstValue().map(\.identifier)
 
         #expect(Set(identifiers) == ["pack", "other"])
     }

@@ -12,20 +12,20 @@ import Testing
 struct EventListRepositoryImplementationTests {
     @Test func allListsDecodesFetchedData() async throws {
         let repository = EventListRepositoryImplementation { Data(#"[{"identifier":"a","title":"A","items":[]}]"#.utf8) }
-        let lists = try await repository.allLists()
+        let lists = try await repository.allLists().firstValue()
         #expect(lists.count == 1)
     }
 
     @Test func allEventsIsEmptyForRawDataSource() async throws {
         let repository = EventListRepositoryImplementation { Data() }
-        #expect(try await repository.allEvents().isEmpty)
+        #expect(try await repository.allEvents().firstValue().isEmpty)
     }
 
     @Test func allListsPropagatesFetchErrors() async {
         struct FetchError: Error {}
         let repository = EventListRepositoryImplementation { throw FetchError() }
         await #expect(throws: FetchError.self) {
-            try await repository.allLists()
+            try await repository.allLists().firstValue()
         }
     }
 }

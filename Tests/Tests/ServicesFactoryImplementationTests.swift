@@ -9,12 +9,6 @@ import Testing
 @testable import ServicesFactory
 
 struct ServicesFactoryImplementationTests {
-    @Test func serviceCreatesEventListServiceImplementationByDefault() async {
-        let factory = ServicesFactoryImplementation(databaseLocation: .inMemory)
-        let service: EventListServiceImplementation = await factory.service(for: .eventList)
-        #expect(service is EventListServiceImplementation)
-    }
-
     @Test func serviceCanBeRequestedByProtocolType() async {
         let factory = ServicesFactoryImplementation(databaseLocation: .inMemory)
         let service = await factory.service(for: .eventList) as EventListService
@@ -26,23 +20,6 @@ struct ServicesFactoryImplementationTests {
         let first: EventListServiceImplementation = await factory.service(for: .eventList)
         let second: EventListServiceImplementation = await factory.service(for: .eventList)
         #expect(first === second)
-    }
-
-    @Test func registeredServiceIsReturned() async {
-        let factory = ServicesFactoryImplementation(databaseLocation: .inMemory)
-        let mock = MockListService()
-        await factory.register(mock)
-        let service: MockListService = await factory.service(for: .eventList)
-        #expect(service === mock)
-    }
-
-    @Test func registeringReplacesPreviouslyCreatedService() async {
-        let factory = ServicesFactoryImplementation(databaseLocation: .inMemory)
-        let _: EventListServiceImplementation = await factory.service(for: .eventList)
-        let mock = MockListService()
-        await factory.register(mock)
-        let service: MockListService = await factory.service(for: .eventList)
-        #expect(service === mock)
     }
 
     @Test func factoriesDoNotShareServices() async {

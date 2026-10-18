@@ -15,7 +15,7 @@ import SQLiteData
 /// internal and are mapped by an ``EventListRecordBuilder``. Every write runs in one
 /// transaction, so a failure leaves the database unchanged.
 final class EventListLocalCacheRepository: EventListWritableRepository {
-    private static let logger = Logger(subsystem: "ServicesFactory", category: "EventListLocalCacheRepository")
+    private let logger = Logger(subsystem: "ServicesFactory", category: "EventListLocalCacheRepository")
 
     private let database: SQLiteDatabase
     private let builder: EventListRecordBuilder
@@ -30,27 +30,28 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
 
     // MARK: - Read
 
-    func allLists() async throws -> [List] {
-        let lists = try await database.fetchAll(ListRecord.self)
-        let fields = try await database.fetchAll(ListFieldRecord.self)
-        let items = try await database.fetchAll(ListItemRecord.self)
-        let links = try await database.fetchAll(ListItemLinkRecord.self)
-        Self.logger.debug("Loaded \(lists.count) cached list(s)")
-        return builder.lists(from: lists, fields: fields, items: items, links: links)
+    func allLists() -> AsyncThrowingStream<[List], any Error> {
+        database.observe { db in
+            let lists = try self.fetchLists(in: db)
+            self.logger.debug("Loaded \(lists.count) cached list(s)")
+            return lists
+        }
     }
 
-    func allEvents() async throws -> [Event] {
-        let events = try await database.fetchAll(EventRecord.self)
-        let eventLists = try await database.fetchAll(EventListRecord.self)
-        let completedItems = try await database.fetchAll(EventCompletedItemRecord.self)
-        let lists = try await allLists()
-        Self.logger.debug("Loaded \(events.count) cached event(s)")
-        return builder.events(
-            from: events,
-            lists: lists,
-            eventLists: eventLists,
-            completedItems: completedItems
-        )
+    func allEvents() -> AsyncThrowingStream<[Event], any Error> {
+        database.observe { db in
+            let events = try EventRecord.fetchAll(db)
+            let eventLists = try EventListRecord.fetchAll(db)
+            let completedItems = try EventCompletedItemRecord.fetchAll(db)
+            let lists = try self.fetchLists(in: db)
+            self.logger.debug("Loaded \(events.count) cached event(s)")
+            return self.builder.events(
+                from: events,
+                lists: lists,
+                eventLists: eventLists,
+                completedItems: completedItems
+            )
+        }
     }
 
     // MARK: - Lists
@@ -67,7 +68,7 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
             try ListRecord.where { $0.id.in(ids) }.delete().execute(db)
             try Self.insert(records, in: db)
         }
-        Self.logger.debug("Cached \(lists.count) list(s)")
+        logger.debug("Cached \(lists.count) list(s)")
     }
 
     func createList(_ list: List) async throws {
@@ -75,7 +76,7 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
         try await database.transaction { db in
             try Self.insert([records], in: db)
         }
-        Self.logger.debug("Created list \(list.identifier) with \(list.items.count) item(s)")
+        logger.debug("Created list \(list.identifier) with \(list.items.count) item(s)")
     }
 
     func updateList(_ list: List) async throws {
@@ -87,13 +88,13 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
             try ListFieldRecord.where { $0.listID.eq(record.id) }.delete().execute(db)
             try ListFieldRecord.insert { fields }.execute(db)
         }
-        Self.logger.debug("Updated list \(list.identifier)")
+        logger.debug("Updated list \(list.identifier)")
     }
 
     func deleteList(identifier: String) async throws {
         // Fields, links and event membership cascade; items are never touched.
         try await database.delete(ListRecord.self) { $0.id.eq(identifier) }
-        Self.logger.debug("Deleted list \(identifier)")
+        logger.debug("Deleted list \(identifier)")
     }
 
     // MARK: - Items
@@ -109,14 +110,14 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
             let link = ListItemLinkRecord(listID: listIdentifier, itemID: record.id, position: position)
             try ListItemLinkRecord.insert { [link] }.execute(db)
         }
-        Self.logger.debug("Added item \(item.identifier) to list \(listIdentifier)")
+        logger.debug("Added item \(item.identifier) to list \(listIdentifier)")
     }
 
     func removeItem(identifier: String, fromListWithIdentifier listIdentifier: String) async throws {
         try await database.delete(ListItemLinkRecord.self) {
             $0.listID.eq(listIdentifier) && $0.itemID.eq(identifier)
         }
-        Self.logger.debug("Removed item \(identifier) from list \(listIdentifier)")
+        logger.debug("Removed item \(identifier) from list \(listIdentifier)")
     }
 
     func updateItem(_ item: ListItem) async throws {
@@ -127,7 +128,7 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
             }
             try ListItemRecord.update(record).execute(db)
         }
-        Self.logger.debug("Updated item \(item.identifier)")
+        logger.debug("Updated item \(item.identifier)")
     }
 
     func deleteItem(identifier: String) async throws {
@@ -136,7 +137,7 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
             try EventCompletedItemRecord.where { $0.itemID.eq(identifier) }.delete().execute(db)
             try ListItemRecord.where { $0.id.eq(identifier) }.delete().execute(db)
         }
-        Self.logger.debug("Deleted item \(identifier)")
+        logger.debug("Deleted item \(identifier)")
     }
 
     func moveItem(
@@ -154,10 +155,20 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
             try ListItemLinkRecord.where { $0.listID.eq(listIdentifier) }.delete().execute(db)
             try ListItemLinkRecord.insert { moved }.execute(db)
         }
-        Self.logger.debug("Moved item \(identifier) to position \(position) in list \(listIdentifier)")
+        logger.debug("Moved item \(identifier) to position \(position) in list \(listIdentifier)")
     }
 
     // MARK: - Helpers
+
+    /// Every stored list, built from its rows in a single read.
+    private func fetchLists(in db: Database) throws -> [List] {
+        builder.lists(
+            from: try ListRecord.fetchAll(db),
+            fields: try ListFieldRecord.fetchAll(db),
+            items: try ListItemRecord.fetchAll(db),
+            links: try ListItemLinkRecord.fetchAll(db)
+        )
+    }
 
     /// Inserts each list's rows. Items that already exist are updated rather than duplicated.
     private static func insert(_ records: [EventListRecordBuilder.ListRecords], in db: Database) throws {

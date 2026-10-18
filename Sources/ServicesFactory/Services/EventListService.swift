@@ -10,11 +10,17 @@
 /// Items are standalone and can be shared by several lists. Deleting a list or removing an item
 /// from a list never deletes the item; only ``deleteItem(identifier:)`` does.
 public protocol EventListService: Service {
-    /// Retrieves all available lists.
-    func allLists() async throws -> [List]
+    /// Streams all available lists.
+    ///
+    /// Each subscription immediately receives the current lists, then a new value after every
+    /// change made through this service. The stream finishes with an error if loading fails.
+    func allLists() -> AsyncThrowingStream<[List], any Error>
 
-    /// Retrieves all available events.
-    func allEvents() async throws -> [Event]
+    /// Streams all available events.
+    ///
+    /// Each subscription immediately receives the current events, then a new value after every
+    /// change made through this service. The stream finishes with an error if loading fails.
+    func allEvents() -> AsyncThrowingStream<[Event], any Error>
 
     /// Creates a list with its fields and items.
     ///
