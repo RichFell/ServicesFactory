@@ -11,22 +11,22 @@ import Testing
 struct ServicesFactoryImplementationTests {
     @Test func serviceCanBeRequestedByProtocolType() async {
         let factory = ServicesFactoryImplementation(databaseLocation: .inMemory)
-        let service = await factory.service(for: .eventList) as EventListService
-        #expect(service.type == .eventList)
+        let service = await factory.service(for: .checklist) as ChecklistService
+        #expect(service.type == .checklist)
     }
 
     @Test func serviceReusesCreatedInstance() async {
         let factory = ServicesFactoryImplementation(databaseLocation: .inMemory)
-        let first: EventListServiceImplementation = await factory.service(for: .eventList)
-        let second: EventListServiceImplementation = await factory.service(for: .eventList)
+        let first: ChecklistServiceImplementation = await factory.service(for: .checklist)
+        let second: ChecklistServiceImplementation = await factory.service(for: .checklist)
         #expect(first === second)
     }
 
     @Test func factoriesDoNotShareServices() async {
         let firstFactory = ServicesFactoryImplementation(databaseLocation: .inMemory)
         let secondFactory = ServicesFactoryImplementation(databaseLocation: .inMemory)
-        let first: EventListServiceImplementation = await firstFactory.service(for: .eventList)
-        let second: EventListServiceImplementation = await secondFactory.service(for: .eventList)
+        let first: ChecklistServiceImplementation = await firstFactory.service(for: .checklist)
+        let second: ChecklistServiceImplementation = await secondFactory.service(for: .checklist)
         #expect(first !== second)
     }
 }

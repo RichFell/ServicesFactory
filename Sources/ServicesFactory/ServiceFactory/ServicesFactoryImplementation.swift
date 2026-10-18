@@ -38,10 +38,10 @@ public actor ServicesFactoryImplementation: ServicesFactory {
 
     private func makeService(for serviceType: ServiceType) -> any Service {
         switch serviceType {
-        case .eventList:
+        case .checklist:
             do {
-                let dependency = try EventListServiceImplementation.Dependency.live(databaseLocation: databaseLocation)
-                return EventListServiceImplementation(dependency: dependency)
+                let dependency = try ChecklistServiceImplementation.Dependency.live(databaseLocation: databaseLocation)
+                return ChecklistServiceImplementation(dependency: dependency)
             } catch {
                 preconditionFailure("Failed to open the local cache: \(error)")
             }

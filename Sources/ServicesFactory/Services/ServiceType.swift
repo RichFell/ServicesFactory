@@ -7,6 +7,6 @@
 
 /// Identifies a service available from a ``ServicesFactory``.
 public enum ServiceType: Hashable, Sendable {
-    /// The service responsible for retrieving lists.
-    case eventList
+    /// The service responsible for retrieving and editing checklists.
+    case checklist
 }

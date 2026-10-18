@@ -13,7 +13,7 @@ public protocol ServicesFactory: Sendable {
     /// Returns the service associated with `serviceType`.
     ///
     /// Clients request the service by its protocol type, for example
-    /// `factory.service(for: .eventList) as EventListService`.
+    /// `factory.service(for: .checklist) as ChecklistService`.
     func service<Requested: Sendable>(
         for serviceType: ServiceType
     ) async -> Requested

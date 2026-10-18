@@ -94,7 +94,7 @@ struct SQLiteDatabaseTests {
         #expect(try await v2.fetchAll(Note.self) == [Note(id: 1, title: "kept")])
     }
 
-    @Test func defaultMigrationsCreateFileAndListTables() async throws {
+    @Test func defaultMigrationsCreateFileAndChecklistTables() async throws {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathComponent("test.sqlite")
@@ -103,9 +103,9 @@ struct SQLiteDatabaseTests {
         let database = try SQLiteDatabase(location: .file(url))
 
         #expect(FileManager.default.fileExists(atPath: url.path))
-        #expect(try await database.fetchAll(ListRecord.self).isEmpty)
-        #expect(try await database.fetchAll(ListFieldRecord.self).isEmpty)
-        #expect(try await database.fetchAll(ListItemRecord.self).isEmpty)
+        #expect(try await database.fetchAll(ChecklistRecord.self).isEmpty)
+        #expect(try await database.fetchAll(ChecklistItemRecord.self).isEmpty)
+        #expect(try await database.fetchAll(ChecklistComponentRecord.self).isEmpty)
     }
 
     @Test func registeredMigrationIdentifiersAreUnique() {
