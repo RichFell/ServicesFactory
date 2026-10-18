@@ -5,6 +5,8 @@
 //  Created by Rich Fellure on 10/17/26.
 //
 
+import Foundation
+import class GRDB.Row
 import SQLiteData
 import Testing
 @testable import ServicesFactory
@@ -34,28 +36,48 @@ struct EventRunsMigrationTests {
         return queue
     }
 
-    @Test func existingEventBecomesACompletedRunWithASnapshot() throws {
+    @Test func existingEventBecomesACompletedRunWithAJSONSnapshot() throws {
         let queue = try makeLegacyDatabase()
 
         try migrate(queue, with: SQLiteDatabase.Migration.all)
 
-        let (eventID, isComplete, completedAt, fields, items, completed) = try queue.read { db in
+        let (eventID, isComplete, completedAt, snapshot, completed, legacyTables) = try queue.read { db in
             (
                 try String.fetchOne(db, sql: #"SELECT "eventID" FROM "eventRuns" WHERE "id" = 'e'"#),
                 try Int.fetchOne(db, sql: #"SELECT "isComplete" FROM "eventRuns" WHERE "id" = 'e'"#),
                 try Double.fetchOne(db, sql: #"SELECT "completedAt" FROM "eventRuns" WHERE "id" = 'e'"#),
-                try String.fetchAll(db, sql: #"SELECT "field" FROM "eventRunListFields" WHERE "runID" = 'e'"#),
-                try String.fetchAll(db, sql: #"SELECT "itemID" FROM "eventRunItems" WHERE "runID" = 'e' ORDER BY "position""#),
-                try String.fetchAll(db, sql: #"SELECT "itemID" FROM "eventRunCompletedItems" WHERE "runID" = 'e'"#)
+                try String.fetchOne(db, sql: #"SELECT "snapshot" FROM "eventRuns" WHERE "id" = 'e'"#),
+                try Row.fetchAll(db, sql: #"SELECT "listID", "itemID" FROM "eventRunCompletedItems" WHERE "runID" = 'e'"#)
+                    .map { "\($0["listID"] as String):\($0["itemID"] as String)" },
+                try ["eventRunLists", "eventRunListFields", "eventRunItems"].filter { try db.tableExists($0) }
             )
         }
+        let lists = try EventRunSnapshot.decode(json: try #require(snapshot)).makeLists()
 
         #expect(eventID == "e")
         #expect(isComplete == 1)
         #expect(completedAt != nil)
-        #expect(fields == ["weight"])
-        #expect(items == ["b", "a"])
-        #expect(completed == ["a"])
+        #expect(lists.map(\.identifier) == ["l"])
+        #expect(lists[0].title == "List")
+        #expect(lists[0].fields == [.weight])
+        #expect(lists[0].items.map(\.identifier) == ["b", "a"])
+        #expect(lists[0].items[0].weight == Measurement(value: 5, unit: .grams))
+        #expect(completed == ["l:a"])
+        #expect(legacyTables.isEmpty)
+    }
+
+    @Test func runsSurviveDeletingTheirEvent() throws {
+        let queue = try makeLegacyDatabase()
+        try migrate(queue, with: SQLiteDatabase.Migration.all)
+
+        try queue.write { db in
+            try db.execute(sql: #"DELETE FROM "events""#)
+        }
+
+        let runs = try queue.read { db in
+            try Int.fetchOne(db, sql: #"SELECT COUNT(*) FROM "eventRuns""#)
+        }
+        #expect(runs == 1)
     }
 
     @Test func eventsLoseTheirCompletionColumnAndKeepTheirLists() throws {

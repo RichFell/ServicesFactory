@@ -10,9 +10,9 @@ import Testing
 
 struct ListItemLinkRecordTests {
     private let links = [
-        ListItemLinkRecord(listID: "l", itemID: "a", position: 0),
-        ListItemLinkRecord(listID: "l", itemID: "b", position: 1),
-        ListItemLinkRecord(listID: "l", itemID: "c", position: 2)
+        ListItemLinkRecord(sectionID: "l", itemID: "a", position: 0),
+        ListItemLinkRecord(sectionID: "l", itemID: "b", position: 1),
+        ListItemLinkRecord(sectionID: "l", itemID: "c", position: 2)
     ]
 
     private func order(_ itemID: String, to position: Int) -> [String] {
@@ -42,6 +42,6 @@ struct ListItemLinkRecordTests {
     @Test func recordsForListFollowItemOrder() {
         let list = List(identifier: "l", items: [ListItem(identifier: "x", name: "X")])
 
-        #expect(ListItemLinkRecord.records(for: list) == [ListItemLinkRecord(listID: "l", itemID: "x", position: 0)])
+        #expect(ListItemLinkRecord.records(for: list) == [ListItemLinkRecord(sectionID: "l", itemID: "x", position: 0)])
     }
 }

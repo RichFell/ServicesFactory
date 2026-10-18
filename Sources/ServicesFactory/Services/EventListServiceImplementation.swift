@@ -39,12 +39,24 @@ final class EventListServiceImplementation: EventListService {
         try await dependency.localCache.deleteList(identifier: identifier)
     }
 
-    func addItem(_ item: ListItem, toListWithIdentifier listIdentifier: String) async throws {
-        try await dependency.localCache.addItem(item, toListWithIdentifier: listIdentifier)
+    func addSection(_ section: ListSection, toListWithIdentifier listIdentifier: String) async throws {
+        try await dependency.localCache.addSection(section, toListWithIdentifier: listIdentifier)
     }
 
-    func removeItem(identifier: String, fromListWithIdentifier listIdentifier: String) async throws {
-        try await dependency.localCache.removeItem(identifier: identifier, fromListWithIdentifier: listIdentifier)
+    func updateSection(_ section: ListSection) async throws {
+        try await dependency.localCache.updateSection(section)
+    }
+
+    func deleteSection(identifier: String) async throws {
+        try await dependency.localCache.deleteSection(identifier: identifier)
+    }
+
+    func addItem(_ item: ListItem, toSectionWithIdentifier sectionIdentifier: String) async throws {
+        try await dependency.localCache.addItem(item, toSectionWithIdentifier: sectionIdentifier)
+    }
+
+    func removeItem(identifier: String, fromSectionWithIdentifier sectionIdentifier: String) async throws {
+        try await dependency.localCache.removeItem(identifier: identifier, fromSectionWithIdentifier: sectionIdentifier)
     }
 
     func updateItem(_ item: ListItem) async throws {
@@ -55,8 +67,12 @@ final class EventListServiceImplementation: EventListService {
         try await dependency.localCache.deleteItem(identifier: identifier)
     }
 
-    func moveItem(identifier: String, inListWithIdentifier listIdentifier: String, to position: Int) async throws {
-        try await dependency.localCache.moveItem(identifier: identifier, inListWithIdentifier: listIdentifier, to: position)
+    func moveItem(identifier: String, inSectionWithIdentifier sectionIdentifier: String, to position: Int) async throws {
+        try await dependency.localCache.moveItem(
+            identifier: identifier,
+            inSectionWithIdentifier: sectionIdentifier,
+            to: position
+        )
     }
 
     func allEventRuns() -> AsyncThrowingStream<[EventRun], any Error> {
@@ -86,11 +102,13 @@ final class EventListServiceImplementation: EventListService {
     func setItem(
         identifier: String,
         isCompleted: Bool,
+        inListWithIdentifier listIdentifier: String,
         inRunWithIdentifier runIdentifier: String
     ) async throws {
         try await dependency.localCache.setItem(
             identifier: identifier,
             isCompleted: isCompleted,
+            inListWithIdentifier: listIdentifier,
             inRunWithIdentifier: runIdentifier
         )
     }

@@ -17,9 +17,6 @@ extension EventListLocalCacheRepository {
         database.observe { db in
             let runs = try self.builder.runs(
                 from: EventRunRecord.fetchAll(db),
-                lists: EventRunListRecord.fetchAll(db),
-                fields: EventRunListFieldRecord.fetchAll(db),
-                items: EventRunItemRecord.fetchAll(db),
                 completedItems: EventRunCompletedItemRecord.fetchAll(db)
             )
             self.logger.debug("Loaded \(runs.count) cached run(s)")
@@ -54,7 +51,7 @@ extension EventListLocalCacheRepository {
     }
 
     func deleteEvent(identifier: String) async throws {
-        // Event lists and runs (with their snapshots) cascade; live lists are never touched.
+        // Event lists cascade. Runs are self-contained and are kept, as are the live lists.
         try await database.delete(EventRecord.self) { $0.id.eq(identifier) }
         logger.debug("Deleted event \(identifier)")
     }
@@ -83,7 +80,8 @@ extension EventListLocalCacheRepository {
                 lists: joins.sorted { $0.position < $1.position }.compactMap { liveLists[$0.listID] },
                 startedAt: startedAt
             )
-            try Self.insert(builder.records(for: run), in: db)
+            let runRecord = try builder.records(for: run).run
+            try EventRunRecord.insert { [runRecord] }.execute(db)
             return run
         }
         logger.debug("Started run \(identifier) of event \(eventIdentifier) with \(run.lists.count) list(s)")
@@ -93,23 +91,25 @@ extension EventListLocalCacheRepository {
     func setItem(
         identifier: String,
         isCompleted: Bool,
+        inListWithIdentifier listIdentifier: String,
         inRunWithIdentifier runIdentifier: String
     ) async throws {
         try await database.transaction { db in
-            try Self.requireRun(runIdentifier, in: db)
-            let snapshotItem = try EventRunItemRecord
-                .where { $0.runID.eq(runIdentifier) && $0.itemID.eq(identifier) }
-                .fetchOne(db)
-            guard snapshotItem != nil else { throw EventListError.itemNotFound(identifier: identifier) }
+            try Self.requireSnapshotItem(
+                identifier,
+                inList: listIdentifier,
+                ofRun: runIdentifier,
+                in: db
+            )
             try EventRunCompletedItemRecord
-                .where { $0.runID.eq(runIdentifier) && $0.itemID.eq(identifier) }
+                .where { $0.runID.eq(runIdentifier) && $0.listID.eq(listIdentifier) && $0.itemID.eq(identifier) }
                 .delete()
                 .execute(db)
             guard isCompleted else { return }
-            let mark = EventRunCompletedItemRecord(runID: runIdentifier, itemID: identifier)
+            let mark = EventRunCompletedItemRecord(runID: runIdentifier, listID: listIdentifier, itemID: identifier)
             try EventRunCompletedItemRecord.insert { [mark] }.execute(db)
         }
-        logger.debug("Set item \(identifier) completed=\(isCompleted) in run \(runIdentifier)")
+        logger.debug("Set item \(identifier) completed=\(isCompleted) in list \(listIdentifier) of run \(runIdentifier)")
     }
 
     func setRun(
@@ -129,21 +129,12 @@ extension EventListLocalCacheRepository {
     }
 
     func deleteRun(identifier: String) async throws {
-        // The snapshot and completion rows cascade.
+        // The completion rows cascade.
         try await database.delete(EventRunRecord.self) { $0.id.eq(identifier) }
         logger.debug("Deleted run \(identifier)")
     }
 
     // MARK: - Helpers
-
-    /// Inserts a run's rows: the run first, then its snapshot, then its completions.
-    private static func insert(_ records: EventListRecordBuilder.RunRecords, in db: Database) throws {
-        try EventRunRecord.insert { [records.run] }.execute(db)
-        try EventRunListRecord.insert { records.lists }.execute(db)
-        try EventRunListFieldRecord.insert { records.fields }.execute(db)
-        try EventRunItemRecord.insert { records.items }.execute(db)
-        try EventRunCompletedItemRecord.insert { records.completedItems }.execute(db)
-    }
 
     private static func requireLists(_ identifiers: [String], in db: Database) throws {
         for identifier in identifiers {
@@ -157,9 +148,22 @@ extension EventListLocalCacheRepository {
         }
     }
 
-    private static func requireRun(_ identifier: String, in db: Database) throws {
-        guard try EventRunRecord.find(identifier).fetchOne(db) != nil else {
-            throw EventListError.runNotFound(identifier: identifier)
+    /// Checks, against the run's snapshot, that the run, the list in it and the item in that list all exist.
+    private static func requireSnapshotItem(
+        _ itemIdentifier: String,
+        inList listIdentifier: String,
+        ofRun runIdentifier: String,
+        in db: Database
+    ) throws {
+        guard let run = try EventRunRecord.find(runIdentifier).fetchOne(db) else {
+            throw EventListError.runNotFound(identifier: runIdentifier)
+        }
+        let lists = try EventRunSnapshot.decode(json: run.snapshot).makeLists()
+        guard let list = lists.first(where: { $0.identifier == listIdentifier }) else {
+            throw EventListError.listNotFound(identifier: listIdentifier)
+        }
+        guard list.items.contains(where: { $0.identifier == itemIdentifier }) else {
+            throw EventListError.itemNotFound(identifier: itemIdentifier)
         }
     }
 }

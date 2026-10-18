@@ -31,15 +31,21 @@ final class MockListService: EventListService {
 
     func deleteList(identifier: String) async throws {}
 
-    func addItem(_ item: ListItem, toListWithIdentifier listIdentifier: String) async throws {}
+    func addSection(_ section: ListSection, toListWithIdentifier listIdentifier: String) async throws {}
 
-    func removeItem(identifier: String, fromListWithIdentifier listIdentifier: String) async throws {}
+    func updateSection(_ section: ListSection) async throws {}
+
+    func deleteSection(identifier: String) async throws {}
+
+    func addItem(_ item: ListItem, toSectionWithIdentifier sectionIdentifier: String) async throws {}
+
+    func removeItem(identifier: String, fromSectionWithIdentifier sectionIdentifier: String) async throws {}
 
     func updateItem(_ item: ListItem) async throws {}
 
     func deleteItem(identifier: String) async throws {}
 
-    func moveItem(identifier: String, inListWithIdentifier listIdentifier: String, to position: Int) async throws {}
+    func moveItem(identifier: String, inSectionWithIdentifier sectionIdentifier: String, to position: Int) async throws {}
 
     func allEventRuns() -> AsyncThrowingStream<[EventRun], any Error> {
         AsyncThrowingStream { continuation in
@@ -61,6 +67,7 @@ final class MockListService: EventListService {
     func setItem(
         identifier: String,
         isCompleted: Bool,
+        inListWithIdentifier listIdentifier: String,
         inRunWithIdentifier runIdentifier: String
     ) async throws {}
 

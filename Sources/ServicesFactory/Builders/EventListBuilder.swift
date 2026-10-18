@@ -22,31 +22,48 @@ struct EventListBuilder: Sendable {
         let identifier: String
         let name: String
         let weightInGrams: Double?
+        let price: Decimal?
 
         var model: ListItem {
-            ListItem(
-                identifier: identifier,
-                name: name,
-                weight: weightInGrams.map { Measurement(value: $0, unit: .grams) }
-            )
+            var values: [ListField: ListFieldValue] = [:]
+            if let weightInGrams {
+                values[.weight] = .weight(Measurement(value: weightInGrams, unit: .grams))
+            }
+            if let price {
+                values[.price] = .price(price)
+            }
+            return ListItem(identifier: identifier, name: name, values: values)
+        }
+    }
+
+    /// Raw representation of a ``ListSection`` as received from a data source.
+    private struct RawListSection: Decodable {
+        let identifier: String
+        let title: String?
+        let items: [RawListItem]
+
+        var model: ListSection {
+            ListSection(identifier: identifier, title: title ?? "", items: items.map(\.model))
         }
     }
 
     /// Raw representation of a ``List`` as received from a data source.
+    ///
+    /// A list carries either `sections`, or a flat `items` array that becomes one untitled section.
     private struct RawList: Decodable {
         let identifier: String
         let title: String
         let fields: [String]?
-        let items: [RawListItem]
+        let sections: [RawListSection]?
+        let items: [RawListItem]?
 
         var model: List {
-            List(
-                identifier: identifier,
-                title: title,
-                // Unknown fields from newer data sources are ignored.
-                fields: Set((fields ?? []).compactMap(ListField.init(rawValue:))),
-                items: items.map(\.model)
-            )
+            // Unknown fields from newer data sources are ignored.
+            let fields = Set((fields ?? []).compactMap(ListField.init(rawValue:)))
+            guard let sections else {
+                return List(identifier: identifier, title: title, fields: fields, items: (items ?? []).map(\.model))
+            }
+            return List(identifier: identifier, title: title, fields: fields, sections: sections.map(\.model))
         }
     }
 }

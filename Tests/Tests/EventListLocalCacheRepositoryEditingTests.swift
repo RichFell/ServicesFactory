@@ -77,7 +77,7 @@ struct EventListLocalCacheRepositoryEditingTests {
         #expect(try await itemIdentifiers(of: "one") == nil)
         #expect(try await itemIdentifiers(of: "two") == ["tent"])
         #expect(Set(try await database.fetchAll(ListItemRecord.self).map(\.id)) == ["tent", "stove"])
-        #expect(try await database.fetchAll(ListItemLinkRecord.self).map(\.listID) == ["two"])
+        #expect(try await database.fetchAll(ListItemLinkRecord.self).map(\.sectionID) == ["two"])
     }
 
     @Test func storeKeepsItemsSharedWithOtherLists() async throws {
@@ -94,8 +94,8 @@ struct EventListLocalCacheRepositoryEditingTests {
     @Test func addItemAppendsToTheEndAndIsIdempotent() async throws {
         try await repository.createList(list("pack", items: [tent]))
 
-        try await repository.addItem(stove, toListWithIdentifier: "pack")
-        try await repository.addItem(stove, toListWithIdentifier: "pack")
+        try await repository.addItem(stove, toSectionWithIdentifier: "pack")
+        try await repository.addItem(stove, toSectionWithIdentifier: "pack")
 
         #expect(try await itemIdentifiers(of: "pack") == ["tent", "stove"])
     }
@@ -104,17 +104,17 @@ struct EventListLocalCacheRepositoryEditingTests {
         try await repository.createList(list("one"))
         try await repository.createList(list("two"))
 
-        try await repository.addItem(tent, toListWithIdentifier: "one")
-        try await repository.addItem(tent, toListWithIdentifier: "two")
+        try await repository.addItem(tent, toSectionWithIdentifier: "one")
+        try await repository.addItem(tent, toSectionWithIdentifier: "two")
 
         #expect(try await itemIdentifiers(of: "one") == ["tent"])
         #expect(try await itemIdentifiers(of: "two") == ["tent"])
         #expect(try await database.fetchAll(ListItemRecord.self).count == 1)
     }
 
-    @Test func addItemThrowsWhenListIsMissing() async throws {
-        await #expect(throws: EventListError.listNotFound(identifier: "nope")) {
-            try await repository.addItem(tent, toListWithIdentifier: "nope")
+    @Test func addItemThrowsWhenSectionIsMissing() async throws {
+        await #expect(throws: EventListError.sectionNotFound(identifier: "nope")) {
+            try await repository.addItem(tent, toSectionWithIdentifier: "nope")
         }
         #expect(try await database.fetchAll(ListItemRecord.self).isEmpty)
     }
@@ -123,7 +123,7 @@ struct EventListLocalCacheRepositoryEditingTests {
         try await repository.createList(list("one", items: [tent]))
         try await repository.createList(list("two", items: [tent]))
 
-        try await repository.removeItem(identifier: "tent", fromListWithIdentifier: "one")
+        try await repository.removeItem(identifier: "tent", fromSectionWithIdentifier: "one")
 
         #expect(try await itemIdentifiers(of: "one") == [])
         #expect(try await itemIdentifiers(of: "two") == ["tent"])
@@ -157,7 +157,12 @@ struct EventListLocalCacheRepositoryEditingTests {
             identifier: "run",
             startedAt: Date()
         )
-        try await repository.setItem(identifier: "tent", isCompleted: true, inRunWithIdentifier: "run")
+        try await repository.setItem(
+            identifier: "tent",
+            isCompleted: true,
+            inListWithIdentifier: "one",
+            inRunWithIdentifier: "run"
+        )
 
         try await repository.deleteItem(identifier: "tent")
 
@@ -165,26 +170,26 @@ struct EventListLocalCacheRepositoryEditingTests {
         #expect(try await itemIdentifiers(of: "one") == ["stove"])
         #expect(try await itemIdentifiers(of: "two") == [])
         #expect(run?.lists.first?.items.map(\.identifier) == ["tent", "stove"])
-        #expect(run?.completedItemIdentifiers == ["tent"])
+        #expect(run?.completedItemIdentifiers == ["one": ["tent"]])
     }
 
     @Test func moveItemReordersWithinTheList() async throws {
         let map = ListItem(identifier: "map", name: "Map")
         try await repository.createList(list("pack", items: [tent, stove, map]))
 
-        try await repository.moveItem(identifier: "map", inListWithIdentifier: "pack", to: 0)
+        try await repository.moveItem(identifier: "map", inSectionWithIdentifier: "pack", to: 0)
 
         #expect(try await itemIdentifiers(of: "pack") == ["map", "tent", "stove"])
     }
 
-    @Test func moveItemThrowsWhenListOrItemIsMissing() async throws {
+    @Test func moveItemThrowsWhenSectionOrItemIsMissing() async throws {
         try await repository.createList(list("pack", items: [tent]))
 
-        await #expect(throws: EventListError.listNotFound(identifier: "nope")) {
-            try await repository.moveItem(identifier: "tent", inListWithIdentifier: "nope", to: 0)
+        await #expect(throws: EventListError.sectionNotFound(identifier: "nope")) {
+            try await repository.moveItem(identifier: "tent", inSectionWithIdentifier: "nope", to: 0)
         }
         await #expect(throws: EventListError.itemNotFound(identifier: "stove")) {
-            try await repository.moveItem(identifier: "stove", inListWithIdentifier: "pack", to: 0)
+            try await repository.moveItem(identifier: "stove", inSectionWithIdentifier: "pack", to: 0)
         }
     }
 }

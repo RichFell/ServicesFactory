@@ -17,7 +17,9 @@ extension SQLiteDatabase.Migration {
         .createListTables,
         .createEventTables,
         .createListItemLinks,
-        .createEventRuns
+        .createEventRuns,
+        .createListSectionsAndValues,
+        .snapshotEventRuns
     ]
 
     /// Makes events reusable by moving completion state onto per-run snapshots.

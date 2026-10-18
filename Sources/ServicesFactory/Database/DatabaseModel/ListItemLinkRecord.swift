@@ -7,20 +7,22 @@
 
 import SQLiteData
 
-/// The stored row placing a ``ListItemRecord`` in a ``ListRecord`` at a display position.
+/// The stored row placing a ``ListItemRecord`` in a ``ListSectionRecord`` at a display position.
 ///
-/// Deleting a list or an item removes its links only; the other side is left in place.
+/// Deleting a section or an item removes its links only; the other side is left in place.
 @Table("listItemLinks")
 struct ListItemLinkRecord: Equatable, Sendable {
-    let listID: String
+    let sectionID: String
     let itemID: String
-    /// The item's index in its list, preserving display order.
+    /// The item's index in its section, preserving display order.
     var position: Int
 
-    /// Creates one link per item of `list`, in order.
+    /// Creates one link per item of each section of `list`, in order.
     static func records(for list: List) -> [ListItemLinkRecord] {
-        list.items.enumerated().map { index, item in
-            ListItemLinkRecord(listID: list.identifier, itemID: item.identifier, position: index)
+        list.sections.flatMap { section in
+            section.items.enumerated().map { index, item in
+                ListItemLinkRecord(sectionID: section.identifier, itemID: item.identifier, position: index)
+            }
         }
     }
 
@@ -35,7 +37,7 @@ struct ListItemLinkRecord: Equatable, Sendable {
             ordered.insert(moved, at: Swift.min(Swift.max(position, 0), ordered.count))
         }
         return ordered.enumerated().map { index, link in
-            ListItemLinkRecord(listID: link.listID, itemID: link.itemID, position: index)
+            ListItemLinkRecord(sectionID: link.sectionID, itemID: link.itemID, position: index)
         }
     }
 }

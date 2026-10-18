@@ -38,12 +38,24 @@ struct MockEventListRepository: EventListWritableRepository {
         try await record("deleteList(\(identifier))")
     }
 
-    func addItem(_ item: ListItem, toListWithIdentifier listIdentifier: String) async throws {
-        try await record("addItem(\(item.identifier), \(listIdentifier))")
+    func addSection(_ section: ListSection, toListWithIdentifier listIdentifier: String) async throws {
+        try await record("addSection(\(section.identifier), \(listIdentifier))")
     }
 
-    func removeItem(identifier: String, fromListWithIdentifier listIdentifier: String) async throws {
-        try await record("removeItem(\(identifier), \(listIdentifier))")
+    func updateSection(_ section: ListSection) async throws {
+        try await record("updateSection(\(section.identifier))")
+    }
+
+    func deleteSection(identifier: String) async throws {
+        try await record("deleteSection(\(identifier))")
+    }
+
+    func addItem(_ item: ListItem, toSectionWithIdentifier sectionIdentifier: String) async throws {
+        try await record("addItem(\(item.identifier), \(sectionIdentifier))")
+    }
+
+    func removeItem(identifier: String, fromSectionWithIdentifier sectionIdentifier: String) async throws {
+        try await record("removeItem(\(identifier), \(sectionIdentifier))")
     }
 
     func updateItem(_ item: ListItem) async throws {
@@ -54,8 +66,8 @@ struct MockEventListRepository: EventListWritableRepository {
         try await record("deleteItem(\(identifier))")
     }
 
-    func moveItem(identifier: String, inListWithIdentifier listIdentifier: String, to position: Int) async throws {
-        try await record("moveItem(\(identifier), \(listIdentifier), \(position))")
+    func moveItem(identifier: String, inSectionWithIdentifier sectionIdentifier: String, to position: Int) async throws {
+        try await record("moveItem(\(identifier), \(sectionIdentifier), \(position))")
     }
 
     func allEventRuns() -> AsyncThrowingStream<[EventRun], any Error> {
@@ -86,9 +98,10 @@ struct MockEventListRepository: EventListWritableRepository {
     func setItem(
         identifier: String,
         isCompleted: Bool,
+        inListWithIdentifier listIdentifier: String,
         inRunWithIdentifier runIdentifier: String
     ) async throws {
-        try await record("setItem(\(identifier), \(isCompleted), \(runIdentifier))")
+        try await record("setItem(\(identifier), \(isCompleted), \(listIdentifier), \(runIdentifier))")
     }
 
     func setRun(
