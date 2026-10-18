@@ -15,10 +15,10 @@ import SQLiteData
 /// internal and are mapped by an ``EventListRecordBuilder``. Every write runs in one
 /// transaction, so a failure leaves the database unchanged.
 final class EventListLocalCacheRepository: EventListWritableRepository {
-    private let logger = Logger(subsystem: "ServicesFactory", category: "EventListLocalCacheRepository")
+    let logger = Logger(subsystem: "ServicesFactory", category: "EventListLocalCacheRepository")
 
-    private let database: SQLiteDatabase
-    private let builder: EventListRecordBuilder
+    let database: SQLiteDatabase
+    let builder: EventListRecordBuilder
 
     init(
         database: SQLiteDatabase,
@@ -42,14 +42,12 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
         database.observe { db in
             let events = try EventRecord.fetchAll(db)
             let eventLists = try EventListRecord.fetchAll(db)
-            let completedItems = try EventCompletedItemRecord.fetchAll(db)
             let lists = try self.fetchLists(in: db)
             self.logger.debug("Loaded \(events.count) cached event(s)")
             return self.builder.events(
                 from: events,
                 lists: lists,
-                eventLists: eventLists,
-                completedItems: completedItems
+                eventLists: eventLists
             )
         }
     }
@@ -132,11 +130,8 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
     }
 
     func deleteItem(identifier: String) async throws {
-        try await database.transaction { db in
-            // Completion marks have no foreign key, so remove them here; links cascade.
-            try EventCompletedItemRecord.where { $0.itemID.eq(identifier) }.delete().execute(db)
-            try ListItemRecord.where { $0.id.eq(identifier) }.delete().execute(db)
-        }
+        // Links cascade. Runs hold their own copy of the item, so they are left untouched.
+        try await database.delete(ListItemRecord.self) { $0.id.eq(identifier) }
         logger.debug("Deleted item \(identifier)")
     }
 
@@ -161,7 +156,7 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
     // MARK: - Helpers
 
     /// Every stored list, built from its rows in a single read.
-    private func fetchLists(in db: Database) throws -> [List] {
+    func fetchLists(in db: Database) throws -> [List] {
         builder.lists(
             from: try ListRecord.fetchAll(db),
             fields: try ListFieldRecord.fetchAll(db),
@@ -197,7 +192,7 @@ final class EventListLocalCacheRepository: EventListWritableRepository {
             .sorted { $0.position < $1.position }
     }
 
-    private static func requireList(_ identifier: String, in db: Database) throws {
+    static func requireList(_ identifier: String, in db: Database) throws {
         guard try ListRecord.find(identifier).fetchOne(db) != nil else {
             throw EventListError.listNotFound(identifier: identifier)
         }

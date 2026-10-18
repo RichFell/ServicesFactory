@@ -5,6 +5,7 @@
 //  Created by Rich Fellure on 10/17/26.
 //
 
+import Foundation
 @testable import ServicesFactory
 
 /// An ``EventListWritableRepository`` stand-in that returns canned results or throws a canned error.
@@ -13,6 +14,7 @@
 struct MockEventListRepository: EventListWritableRepository {
     var lists: [List] = []
     var events: [Event] = []
+    var runs: [EventRun] = []
     var error: (any Error & Sendable)?
     let calls = Calls()
 
@@ -54,6 +56,51 @@ struct MockEventListRepository: EventListWritableRepository {
 
     func moveItem(identifier: String, inListWithIdentifier listIdentifier: String, to position: Int) async throws {
         try await record("moveItem(\(identifier), \(listIdentifier), \(position))")
+    }
+
+    func allEventRuns() -> AsyncThrowingStream<[EventRun], any Error> {
+        stream(of: runs)
+    }
+
+    func createEvent(_ event: Event) async throws {
+        try await record("createEvent(\(event.identifier))")
+    }
+
+    func updateEvent(_ event: Event) async throws {
+        try await record("updateEvent(\(event.identifier))")
+    }
+
+    func deleteEvent(identifier: String) async throws {
+        try await record("deleteEvent(\(identifier))")
+    }
+
+    func startRun(
+        ofEventWithIdentifier eventIdentifier: String,
+        identifier: String,
+        startedAt: Date
+    ) async throws -> EventRun {
+        try await record("startRun(\(eventIdentifier), \(identifier))")
+        return EventRun(identifier: identifier, eventIdentifier: eventIdentifier, title: "", startedAt: startedAt)
+    }
+
+    func setItem(
+        identifier: String,
+        isCompleted: Bool,
+        inRunWithIdentifier runIdentifier: String
+    ) async throws {
+        try await record("setItem(\(identifier), \(isCompleted), \(runIdentifier))")
+    }
+
+    func setRun(
+        identifier: String,
+        isComplete: Bool,
+        at date: Date
+    ) async throws {
+        try await record("setRun(\(identifier), \(isComplete))")
+    }
+
+    func deleteRun(identifier: String) async throws {
+        try await record("deleteRun(\(identifier))")
     }
 
     /// A stream that yields `value` once, or finishes with the canned error.

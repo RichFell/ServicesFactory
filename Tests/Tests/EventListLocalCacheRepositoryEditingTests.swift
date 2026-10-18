@@ -147,18 +147,25 @@ struct EventListLocalCacheRepositoryEditingTests {
         }
     }
 
-    @Test func deleteItemRemovesItFromEveryListAndEvent() async throws {
-        try await repository.createList(list("one", items: [tent, stove]))
+    @Test func deleteItemRemovesItFromEveryListButNotFromRuns() async throws {
+        let one = list("one", items: [tent, stove])
+        try await repository.createList(one)
         try await repository.createList(list("two", items: [tent]))
-        let event = Event(identifier: "trip", title: "Trip", completedItemIdentifiers: ["tent", "stove"])
-        try await database.insert([EventRecord(event)])
-        try await database.insert(EventCompletedItemRecord.records(for: event))
+        try await repository.createEvent(Event(identifier: "trip", title: "Trip", lists: [one]))
+        _ = try await repository.startRun(
+            ofEventWithIdentifier: "trip",
+            identifier: "run",
+            startedAt: Date()
+        )
+        try await repository.setItem(identifier: "tent", isCompleted: true, inRunWithIdentifier: "run")
 
         try await repository.deleteItem(identifier: "tent")
 
+        let run = try await repository.allEventRuns().firstValue().first
         #expect(try await itemIdentifiers(of: "one") == ["stove"])
         #expect(try await itemIdentifiers(of: "two") == [])
-        #expect(try await repository.allEvents().firstValue().first?.completedItemIdentifiers == ["stove"])
+        #expect(run?.lists.first?.items.map(\.identifier) == ["tent", "stove"])
+        #expect(run?.completedItemIdentifiers == ["tent"])
     }
 
     @Test func moveItemReordersWithinTheList() async throws {

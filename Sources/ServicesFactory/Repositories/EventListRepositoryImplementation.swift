@@ -47,4 +47,12 @@ final class EventListRepositoryImplementation: EventListRepository {
             continuation.finish()
         }
     }
+
+    func allEventRuns() -> AsyncThrowingStream<[EventRun], any Error> {
+        // The raw data source only provides lists, so there are no runs to return.
+        AsyncThrowingStream { continuation in
+            continuation.yield([])
+            continuation.finish()
+        }
+    }
 }

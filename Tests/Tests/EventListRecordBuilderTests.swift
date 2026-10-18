@@ -79,28 +79,19 @@ struct EventListRecordBuilderTests {
         #expect(lists[1].items.isEmpty)
     }
 
-    @Test func eventsResolveOrderedListsAndCompletedItems() {
+    @Test func eventsResolveOrderedLists() {
         let other = List(identifier: "other", title: "Other")
-        let event = Event(
-            identifier: "trip",
-            title: "Trip",
-            lists: [other, list],
-            completedItemIdentifiers: ["a"],
-            isComplete: true
-        )
+        let event = Event(identifier: "trip", title: "Trip", lists: [other, list])
 
         let events = builder.events(
             from: [EventRecord(event)],
             lists: [list, other],
-            eventLists: EventListRecord.records(for: event).reversed(),
-            completedItems: EventCompletedItemRecord.records(for: event)
+            eventLists: EventListRecord.records(for: event).reversed()
         )
 
         #expect(events.count == 1)
         #expect(events[0].identifier == "trip")
         #expect(events[0].lists.map(\.identifier) == ["other", "pack"])
-        #expect(events[0].completedItemIdentifiers == ["a"])
-        #expect(events[0].isComplete)
     }
 
     @Test func eventsSkipJoinRowsForMissingLists() {
@@ -109,10 +100,42 @@ struct EventListRecordBuilderTests {
         let events = builder.events(
             from: [EventRecord(event)],
             lists: [],
-            eventLists: EventListRecord.records(for: event),
-            completedItems: []
+            eventLists: EventListRecord.records(for: event)
         )
 
         #expect(events[0].lists.isEmpty)
+    }
+
+    @Test func runRecordsRoundTripThroughPublicModel() {
+        let startedAt = Date(timeIntervalSince1970: 1_000)
+        let run = EventRun(
+            identifier: "run",
+            eventIdentifier: "trip",
+            title: "Trip",
+            lists: [list],
+            completedItemIdentifiers: ["a"],
+            isComplete: true,
+            startedAt: startedAt,
+            completedAt: startedAt.addingTimeInterval(60)
+        )
+        let records = builder.records(for: run)
+
+        let runs = builder.runs(
+            from: [records.run],
+            lists: records.lists,
+            fields: records.fields,
+            items: records.items.reversed(),
+            completedItems: records.completedItems
+        )
+
+        #expect(runs.count == 1)
+        #expect(runs[0].lists.map(\.identifier) == ["pack"])
+        #expect(runs[0].lists[0].fields == [.weight])
+        #expect(runs[0].lists[0].items.map(\.identifier) == ["a", "b"])
+        #expect(runs[0].lists[0].items[0].weight == Measurement(value: 2000, unit: .grams))
+        #expect(runs[0].completedItemIdentifiers == ["a"])
+        #expect(runs[0].isComplete)
+        #expect(runs[0].startedAt == startedAt)
+        #expect(runs[0].completedAt == startedAt.addingTimeInterval(60))
     }
 }

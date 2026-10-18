@@ -42,6 +42,40 @@ struct EventListServiceEditingTests {
         ])
     }
 
+    @Test func eventAndRunEditsAreDelegatedToTheRepositoryInOrder() async throws {
+        let repository = MockEventListRepository()
+        let service = makeService(repository)
+
+        try await service.createEvent(Event(identifier: "trip", title: "Trip"))
+        try await service.updateEvent(Event(identifier: "trip", title: "Trip 2"))
+        let run = try await service.startRun(ofEventWithIdentifier: "trip")
+        try await service.setItem(identifier: "tent", isCompleted: true, inRunWithIdentifier: run.identifier)
+        try await service.setRun(identifier: run.identifier, isComplete: true)
+        try await service.deleteRun(identifier: run.identifier)
+        try await service.deleteEvent(identifier: "trip")
+
+        #expect(run.eventIdentifier == "trip")
+        #expect(!run.identifier.isEmpty)
+        #expect(await repository.calls.values == [
+            "createEvent(trip)",
+            "updateEvent(trip)",
+            "startRun(trip, \(run.identifier))",
+            "setItem(tent, true, \(run.identifier))",
+            "setRun(\(run.identifier), true)",
+            "deleteRun(\(run.identifier))",
+            "deleteEvent(trip)"
+        ])
+    }
+
+    @Test func allEventRunsStreamsTheRepositoryRuns() async throws {
+        var repository = MockEventListRepository()
+        repository.runs = [EventRun(identifier: "run", eventIdentifier: "trip", title: "Trip")]
+
+        let runs = try await makeService(repository).allEventRuns().firstValue()
+
+        #expect(runs.map(\.identifier) == ["run"])
+    }
+
     @Test func editsPropagateRepositoryErrors() async {
         let service = makeService(MockEventListRepository(error: TestError()))
 

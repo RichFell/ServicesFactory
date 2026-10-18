@@ -5,6 +5,8 @@
 //  Created by Rich Fellure on 10/15/26.
 //
 
+import Foundation
+
 /// The default ``EventListService`` implementation.
 ///
 /// Reads and edits lists and events through the ``Dependency/localCache`` repository.
@@ -55,6 +57,54 @@ final class EventListServiceImplementation: EventListService {
 
     func moveItem(identifier: String, inListWithIdentifier listIdentifier: String, to position: Int) async throws {
         try await dependency.localCache.moveItem(identifier: identifier, inListWithIdentifier: listIdentifier, to: position)
+    }
+
+    func allEventRuns() -> AsyncThrowingStream<[EventRun], any Error> {
+        dependency.localCache.allEventRuns()
+    }
+
+    func createEvent(_ event: Event) async throws {
+        try await dependency.localCache.createEvent(event)
+    }
+
+    func updateEvent(_ event: Event) async throws {
+        try await dependency.localCache.updateEvent(event)
+    }
+
+    func deleteEvent(identifier: String) async throws {
+        try await dependency.localCache.deleteEvent(identifier: identifier)
+    }
+
+    func startRun(ofEventWithIdentifier eventIdentifier: String) async throws -> EventRun {
+        try await dependency.localCache.startRun(
+            ofEventWithIdentifier: eventIdentifier,
+            identifier: UUID().uuidString,
+            startedAt: Date()
+        )
+    }
+
+    func setItem(
+        identifier: String,
+        isCompleted: Bool,
+        inRunWithIdentifier runIdentifier: String
+    ) async throws {
+        try await dependency.localCache.setItem(
+            identifier: identifier,
+            isCompleted: isCompleted,
+            inRunWithIdentifier: runIdentifier
+        )
+    }
+
+    func setRun(identifier: String, isComplete: Bool) async throws {
+        try await dependency.localCache.setRun(
+            identifier: identifier,
+            isComplete: isComplete,
+            at: Date()
+        )
+    }
+
+    func deleteRun(identifier: String) async throws {
+        try await dependency.localCache.deleteRun(identifier: identifier)
     }
 }
 

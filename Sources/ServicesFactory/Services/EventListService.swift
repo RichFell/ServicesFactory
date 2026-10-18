@@ -60,7 +60,7 @@ public protocol EventListService: Service {
     /// - Throws: ``EventListError/itemNotFound(identifier:)`` when the item does not exist.
     func updateItem(_ item: ListItem) async throws
 
-    /// Deletes an item from every list and clears its completion in every event.
+    /// Deletes an item from every list. Runs keep their own copy, so past runs still show it.
     ///
     /// - Parameter identifier: The identifier of the item to delete. Does nothing if it does not exist.
     func deleteItem(identifier: String) async throws
@@ -74,4 +74,61 @@ public protocol EventListService: Service {
     /// - Throws: ``EventListError/listNotFound(identifier:)`` or
     ///   ``EventListError/itemNotFound(identifier:)`` when either does not exist.
     func moveItem(identifier: String, inListWithIdentifier listIdentifier: String, to position: Int) async throws
+
+    /// Streams all event runs, each with its own snapshot of the lists as they were when it started.
+    ///
+    /// Each subscription immediately receives the current runs, then a new value after every
+    /// change made through this service. The stream finishes with an error if loading fails.
+    func allEventRuns() -> AsyncThrowingStream<[EventRun], any Error>
+
+    /// Creates an event that uses the already existing lists named by `event.lists`, in order.
+    ///
+    /// - Parameter event: The event to create.
+    /// - Throws: ``EventListError/listNotFound(identifier:)`` when a list does not exist.
+    func createEvent(_ event: Event) async throws
+
+    /// Updates an event's title and lists. Runs already started are not affected.
+    ///
+    /// - Parameter event: The event carrying the new title and lists.
+    /// - Throws: ``EventListError/eventNotFound(identifier:)`` or ``EventListError/listNotFound(identifier:)``.
+    func updateEvent(_ event: Event) async throws
+
+    /// Deletes an event and all of its runs. Its lists are kept.
+    ///
+    /// - Parameter identifier: The identifier of the event to delete. Does nothing if it does not exist.
+    func deleteEvent(identifier: String) async throws
+
+    /// Starts a new run of an event, snapshotting its lists, fields and items as they are now.
+    ///
+    /// - Parameter eventIdentifier: The identifier of the event to run.
+    /// - Returns: The new run, with nothing completed.
+    /// - Throws: ``EventListError/eventNotFound(identifier:)`` when the event does not exist.
+    func startRun(ofEventWithIdentifier eventIdentifier: String) async throws -> EventRun
+
+    /// Marks an item of a run as completed or not completed.
+    ///
+    /// - Parameters:
+    ///   - identifier: The identifier of the item in the run's snapshot.
+    ///   - isCompleted: Whether the item is completed.
+    ///   - runIdentifier: The identifier of the run.
+    /// - Throws: ``EventListError/runNotFound(identifier:)`` or
+    ///   ``EventListError/itemNotFound(identifier:)`` when the item is not in the run.
+    func setItem(
+        identifier: String,
+        isCompleted: Bool,
+        inRunWithIdentifier runIdentifier: String
+    ) async throws
+
+    /// Marks a run as completed, or reopens it.
+    ///
+    /// - Parameters:
+    ///   - identifier: The identifier of the run.
+    ///   - isComplete: Whether the run is completed. Completing records the completion date.
+    /// - Throws: ``EventListError/runNotFound(identifier:)`` when the run does not exist.
+    func setRun(identifier: String, isComplete: Bool) async throws
+
+    /// Deletes a run and its snapshot. The event and its lists are kept.
+    ///
+    /// - Parameter identifier: The identifier of the run to delete. Does nothing if it does not exist.
+    func deleteRun(identifier: String) async throws
 }

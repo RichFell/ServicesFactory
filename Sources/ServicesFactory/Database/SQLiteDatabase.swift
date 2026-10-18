@@ -129,7 +129,10 @@ final class SQLiteDatabase: Sendable {
     // MARK: - Transactions
 
     /// Runs `updates` in a single transaction: every change is applied, or none if it throws.
-    func transaction(_ updates: @escaping @Sendable (Database) throws -> Void) async throws {
+    ///
+    /// - Returns: The value `updates` returns, once the transaction has committed.
+    @discardableResult
+    func transaction<Result: Sendable>(_ updates: @escaping @Sendable (Database) throws -> Result) async throws -> Result {
         try await writer.write(updates)
     }
 

@@ -48,17 +48,71 @@ struct EventListRecordBuilder: Sendable {
     func events(
         from events: [EventRecord],
         lists: [List],
-        eventLists: [EventListRecord],
-        completedItems: [EventCompletedItemRecord]
+        eventLists: [EventListRecord]
     ) -> [Event] {
         let listsByID = Dictionary(lists.map { ($0.identifier, $0) }, uniquingKeysWith: { first, _ in first })
         let joinsByEvent = Dictionary(grouping: eventLists, by: \.eventID)
-        let completedByEvent = Dictionary(grouping: completedItems, by: \.eventID)
         return events.map { record in
             let eventLists = (joinsByEvent[record.id] ?? [])
                 .sorted { $0.position < $1.position }
                 .compactMap { listsByID[$0.listID] }
-            return record.makeEvent(lists: eventLists, completedItems: completedByEvent[record.id] ?? [])
+            return record.makeEvent(lists: eventLists)
+        }
+    }
+
+    /// Splits `run` into the rows that persist it, including its list snapshot.
+    func records(for run: EventRun) -> RunRecords {
+        RunRecords(
+            run: EventRunRecord(run),
+            lists: EventRunListRecord.records(for: run),
+            fields: EventRunListFieldRecord.records(for: run),
+            items: EventRunItemRecord.records(for: run),
+            completedItems: EventRunCompletedItemRecord.records(for: run)
+        )
+    }
+
+    /// Rebuilds public runs from stored rows, in the order of `runs`.
+    ///
+    /// Each run's lists are rebuilt from its own snapshot rows, ordered by `position`, never from
+    /// the live lists.
+    func runs(
+        from runs: [EventRunRecord],
+        lists: [EventRunListRecord],
+        fields: [EventRunListFieldRecord],
+        items: [EventRunItemRecord],
+        completedItems: [EventRunCompletedItemRecord]
+    ) -> [EventRun] {
+        let listsByRun = Dictionary(grouping: lists, by: \.runID)
+        let fieldsByRun = Dictionary(grouping: fields, by: \.runID)
+        let itemsByRun = Dictionary(grouping: items, by: \.runID)
+        let completedByRun = Dictionary(grouping: completedItems, by: \.runID)
+        return runs.map { record in
+            let snapshotLists = snapshotLists(
+                from: listsByRun[record.id] ?? [],
+                fields: fieldsByRun[record.id] ?? [],
+                items: itemsByRun[record.id] ?? []
+            )
+            return record.makeRun(lists: snapshotLists, completedItems: completedByRun[record.id] ?? [])
+        }
+    }
+
+    /// Rebuilds one run's lists from its snapshot rows, ordered by `position`.
+    private func snapshotLists(
+        from lists: [EventRunListRecord],
+        fields: [EventRunListFieldRecord],
+        items: [EventRunItemRecord]
+    ) -> [List] {
+        let fieldsByList = Dictionary(grouping: fields, by: \.listID)
+        let itemsByList = Dictionary(grouping: items, by: \.listID)
+        return lists.sorted { $0.position < $1.position }.map { record in
+            List(
+                identifier: record.listID,
+                title: record.title,
+                fields: Set((fieldsByList[record.listID] ?? []).compactMap { ListField(rawValue: $0.field) }),
+                items: (itemsByList[record.listID] ?? [])
+                    .sorted { $0.position < $1.position }
+                    .map { $0.makeListItem() }
+            )
         }
     }
 }
@@ -72,5 +126,14 @@ extension EventListRecordBuilder {
         let fields: [ListFieldRecord]
         let items: [ListItemRecord]
         let links: [ListItemLinkRecord]
+    }
+
+    /// The rows that together persist a single ``EventRun`` and its list snapshot.
+    struct RunRecords: Equatable, Sendable {
+        let run: EventRunRecord
+        let lists: [EventRunListRecord]
+        let fields: [EventRunListFieldRecord]
+        let items: [EventRunItemRecord]
+        let completedItems: [EventRunCompletedItemRecord]
     }
 }

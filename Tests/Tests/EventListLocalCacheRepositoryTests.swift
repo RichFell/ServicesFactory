@@ -98,17 +98,10 @@ struct EventListLocalCacheRepositoryTests {
         let database = try SQLiteDatabase(location: .inMemory, migrations: SQLiteDatabase.Migration.all)
         let repository = EventListLocalCacheRepository(database: database)
         let list = makePackingList()
-        let event = Event(
-            identifier: "trip",
-            title: "Trip",
-            lists: [list],
-            completedItemIdentifiers: ["tent"],
-            isComplete: true
-        )
+        let event = Event(identifier: "trip", title: "Trip", lists: [list])
         try await repository.store([list])
         try await database.insert([EventRecord(event)])
         try await database.insert(EventListRecord.records(for: event))
-        try await database.insert(EventCompletedItemRecord.records(for: event))
 
         let events = try await repository.allEvents().firstValue()
 
@@ -116,8 +109,6 @@ struct EventListLocalCacheRepositoryTests {
         #expect(events[0].title == "Trip")
         #expect(events[0].lists.map(\.identifier) == ["pack"])
         #expect(events[0].lists[0].items.map(\.identifier) == ["tent", "stove"])
-        #expect(events[0].completedItemIdentifiers == ["tent"])
-        #expect(events[0].isComplete)
     }
 
     @Test func storingOneListLeavesOtherCachedListsUntouched() async throws {
