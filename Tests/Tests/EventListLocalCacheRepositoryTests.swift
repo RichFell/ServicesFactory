@@ -88,6 +88,31 @@ struct EventListLocalCacheRepositoryTests {
         #expect(lists[0].items.map(\.identifier) == ["map"])
     }
 
+    @Test func allEventRunsIsEmptyWhenNothingIsCached() async throws {
+        let repository = try makeRepository()
+
+        #expect(try await repository.allEventRuns().firstValue().isEmpty)
+    }
+
+    @Test func allEventRunsEmitsAgainWhenRunsChange() async throws {
+        let repository = try makeRepository()
+        let list = makePackingList()
+        try await repository.createList(list)
+        try await repository.createEvent(Event(identifier: "trip", title: "Trip", lists: [list]))
+        var iterator = repository.allEventRuns().makeAsyncIterator()
+
+        let initial = try await iterator.next()
+        _ = try await repository.startRun(
+            ofEventWithIdentifier: "trip",
+            identifier: "run",
+            startedAt: Date()
+        )
+        let updated = try await iterator.next()
+
+        #expect(initial?.isEmpty == true)
+        #expect(updated?.map(\.identifier) == ["run"])
+    }
+
     @Test func allEventsIsEmptyWhenNothingIsCached() async throws {
         let repository = try makeRepository()
 

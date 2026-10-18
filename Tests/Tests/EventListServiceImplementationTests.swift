@@ -32,6 +32,26 @@ struct EventListServiceImplementationTests {
         #expect(try await service.allEvents().firstValue().isEmpty)
     }
 
+    @Test func allEventRunsReturnsNoRunsWhenCacheIsEmpty() async throws {
+        let service = makeService(MockEventListRepository())
+        #expect(try await service.allEventRuns().firstValue().isEmpty)
+    }
+
+    @Test func allEventRunsReturnsRepositoryRuns() async throws {
+        let run = EventRun(identifier: "run", eventIdentifier: "trip", title: "Trip")
+        let service = makeService(MockEventListRepository(runs: [run]))
+
+        #expect(try await service.allEventRuns().firstValue().map(\.identifier) == ["run"])
+    }
+
+    @Test func allEventRunsPropagatesRepositoryError() async {
+        let service = makeService(MockEventListRepository(error: TestError()))
+
+        await #expect(throws: TestError.self) {
+            try await service.allEventRuns().firstValue()
+        }
+    }
+
     @Test func allListsPropagatesRepositoryError() async {
         let service = makeService(MockEventListRepository(error: TestError()))
 

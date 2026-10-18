@@ -21,6 +21,11 @@ struct EventListRepositoryImplementationTests {
         #expect(try await repository.allEvents().firstValue().isEmpty)
     }
 
+    @Test func allEventRunsIsEmptyForRawDataSource() async throws {
+        let repository = EventListRepositoryImplementation { Data() }
+        #expect(try await repository.allEventRuns().firstValue().isEmpty)
+    }
+
     @Test func allListsPropagatesFetchErrors() async {
         struct FetchError: Error {}
         let repository = EventListRepositoryImplementation { throw FetchError() }

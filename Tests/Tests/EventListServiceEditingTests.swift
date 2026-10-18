@@ -67,15 +67,6 @@ struct EventListServiceEditingTests {
         ])
     }
 
-    @Test func allEventRunsStreamsTheRepositoryRuns() async throws {
-        var repository = MockEventListRepository()
-        repository.runs = [EventRun(identifier: "run", eventIdentifier: "trip", title: "Trip")]
-
-        let runs = try await makeService(repository).allEventRuns().firstValue()
-
-        #expect(runs.map(\.identifier) == ["run"])
-    }
-
     @Test func editsPropagateRepositoryErrors() async {
         let service = makeService(MockEventListRepository(error: TestError()))
 
